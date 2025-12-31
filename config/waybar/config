@@ -1,0 +1,136 @@
+{
+    "layer": "top",
+    "position": "top",
+    "height": 34,
+    "spacing": 8,
+    "margin-top": 8,
+    "margin-left": 12,
+    "margin-right": 12,
+    
+    "modules-left": ["clock", "niri/workspaces"],
+    "modules-center": ["niri/window"],
+    "modules-right": ["custom/system-monitor", "pulseaudio", "custom/audio-output", "network", "cpu", "memory", "temperature", "backlight", "battery", "custom/caffeine", "tray"],
+    
+    "custom/launcher": {
+        "format": ">>",
+        "on-click": "rofi -show drun -theme ~/.config/rofi/retro.rasi",
+        "tooltip": false
+    },
+    
+    "niri/workspaces": {
+        "format": "[{icon}]",
+        "format-icons": {
+            "1": "1",
+            "2": "2",
+            "3": "3",
+            "4": "4",
+            "5": "5",
+            "6": "6",
+            "7": "7",
+            "8": "8",
+            "9": "9"
+        },
+        "persistent-workspaces": {
+            "*": 5
+        }
+    },
+    
+    "niri/window": {
+        "format": ">> {}",
+        "max-length": 50,
+        "separate-outputs": true
+    },
+    
+    "clock": {
+        "format": "[ {:%H:%M:%S} ]",
+        "interval": 1,
+        "tooltip-format": "<big>{:%Y-%m-%d}</big>\n<tt><small>{calendar}</small></tt>",
+        "format-alt": "[ {:%Y-%m-%d} ]"
+    },
+    
+    "cpu": {
+        "format": "CPU:{usage}%",
+        "tooltip": true,
+        "interval": 2,
+        "on-click": "kitty -e btop"
+    },
+    
+    "memory": {
+        "format": "RAM:{percentage}%",
+        "tooltip-format": "╔══════════════════════╗\n║  MEMORY STATUS      ║\n╠══════════════════════╣\n║ RAM: {used:0.1f}G/{total:0.1f}G   ║\n║ SWAP: {swapUsed:0.1f}G/{swapTotal:0.1f}G ║\n╚══════════════════════╝",
+        "on-click": "kitty -e btop"
+    },
+    
+    "temperature": {
+        "thermal-zone": 2,
+        "critical-threshold": 80,
+        "format": "TEMP:{temperatureC}°C",
+        "format-critical": "TEMP:{temperatureC}°C!!!",
+        "on-click": "kitty -e btop"
+    },
+    
+    "backlight": {
+        "device": "intel_backlight",
+        "format": "BRT:{percent}%"
+    },
+    
+    "battery": {
+        "states": {
+            "warning": 30,
+            "critical": 15
+        },
+        "format": "BAT:{capacity}%",
+        "format-charging": "CHG:{capacity}%",
+        "format-plugged": "PWR:{capacity}%",
+        "format-alt": "BAT:{time}"
+    },
+    
+    "network": {
+        "format-wifi": "NET:{signalStrength}%",
+        "format-ethernet": "ETH:ON",
+        "tooltip-format": "╔══════════════════════╗\n║  NETWORK STATUS     ║\n╠══════════════════════╣\n║ IF: {ifname}        ║\n║ IP: {ipaddr}        ║\n║ GW: {gwaddr}        ║\n╚══════════════════════╝",
+        "format-linked": "NET:NoIP",
+        "format-disconnected": "NET:OFF",
+        "format-alt": "{ifname}:{ipaddr}"
+    },
+    
+    "pulseaudio": {
+        "format": "VOL:{volume}%",
+        "format-bluetooth": "BT:{volume}%",
+        "format-muted": "VOL:MUTE",
+        "on-click": "pamixer -t && ~/.local/bin/volume-osd-retro.sh mute",
+        "on-click-right": "pavucontrol",
+        "scroll-step": 5,
+        "on-scroll-up": "~/.local/bin/volume-osd-retro.sh up",
+        "on-scroll-down": "~/.local/bin/volume-osd-retro.sh down"
+    },
+    
+    "custom/audio-output": {
+        "format": "[AUD]",
+        "on-click": "~/.local/bin/audio-switch-retro.sh",
+        "tooltip": true,
+        "tooltip-format": ">> AUDIO DEVICE SELECTOR <<"
+    },
+    
+    "custom/caffeine": {
+        "format": "{}",
+        "exec": "~/.local/bin/caffeine-status-retro.sh",
+        "on-click": "~/.local/bin/caffeine-toggle.sh",
+        "interval": 1,
+        "tooltip": true,
+        "return-type": "json"
+    },
+    
+    "custom/system-monitor": {
+        "format": "{}",
+        "exec": "~/.local/bin/system-monitor-retro.sh",
+        "on-click": "kitty -e btop",
+        "interval": 2,
+        "return-type": "json"
+    },
+    
+    "tray": {
+        "icon-size": 18,
+        "spacing": 8
+    }
+}

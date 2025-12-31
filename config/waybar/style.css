@@ -1,0 +1,270 @@
+/* Waybar Retro Gaming Style - Pywal Dynamic Colors */
+@import "../../.cache/wal/colors-waybar.css";
+
+* {
+    font-family: "Monospace", "DejaVu Sans Mono", monospace;
+    font-size: 13px;
+    font-weight: bold;
+    min-height: 0;
+}
+
+window#waybar {
+    background-color: @background;
+    border: 3px solid @color2;
+    border-radius: 0px;
+}
+
+/* Scanline effect with dynamic color */
+window#waybar {
+    background-image: repeating-linear-gradient(
+        0deg,
+        @color2,
+        @color2 1px,
+        transparent 1px,
+        transparent 2px
+    );
+}
+
+#workspaces,
+#window,
+#clock,
+#battery,
+#cpu,
+#memory,
+#temperature,
+#backlight,
+#network,
+#pulseaudio,
+#tray,
+#custom-launcher,
+#custom-audio-output,
+#custom-caffeine,
+#custom-system-monitor {
+    background-color: @background;
+    color: @color2;
+    padding: 4px 12px;
+    margin: 0 3px;
+    border: 2px solid @color2;
+    border-radius: 0px;
+    text-shadow: 0 0 5px @color2;
+}
+
+/* Launcher */
+#custom-launcher {
+    background-color: @color0;
+    color: @color2;
+    font-size: 16px;
+    padding: 4px 16px;
+    border: 3px solid @color2;
+    text-shadow: 0 0 10px @color2;
+}
+
+#custom-launcher:hover {
+    background-color: @color1;
+    box-shadow: 0 0 15px @color2;
+}
+
+/* Workspaces */
+#workspaces button {
+    padding: 0 8px;
+    color: @color2;
+    background-color: @background;
+    border: 1px solid @color0;
+    margin: 2px;
+}
+
+#workspaces button:hover {
+    background-color: @color0;
+    box-shadow: 0 0 10px @color2;
+}
+
+#workspaces button.active {
+    background-color: @color1;
+    color: @color2;
+    border: 2px solid @color2;
+    text-shadow: 0 0 15px @color2;
+    box-shadow: 0 0 15px @color2;
+}
+
+#workspaces button.urgent {
+    background-color: @color1;
+    color: @color1;
+    border: 2px solid @color1;
+    text-shadow: 0 0 10px @color1;
+    animation: blink 1s linear infinite;
+}
+
+@keyframes blink {
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* Window title */
+#window {
+    color: @color2;
+    font-weight: bold;
+    border-color: @color4;
+}
+
+/* Clock */
+#clock {
+    color: @color2;
+    background-color: @color0;
+    font-weight: bold;
+    font-size: 14px;
+    padding: 4px 20px;
+    border: 3px solid @color2;
+    text-shadow: 0 0 10px @color2;
+    box-shadow: 0 0 15px @color2;
+}
+
+/* Battery */
+#battery {
+    color: @color2;
+}
+
+#battery.charging {
+    color: @color2;
+    background-color: @color0;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0% { 
+        opacity: 1; 
+    }
+    50% { 
+        opacity: 0.7; 
+    }
+    100% { 
+        opacity: 1; 
+    }
+}
+
+#battery.warning:not(.charging) {
+    color: @color3;
+    border-color: @color3;
+    text-shadow: 0 0 10px @color3;
+}
+
+#battery.critical:not(.charging) {
+    color: @color1;
+    border-color: @color1;
+    background-color: @color0;
+    text-shadow: 0 0 10px @color1;
+    animation: blink 0.5s linear infinite;
+}
+
+/* System stats */
+#cpu {
+    color: @color2;
+}
+
+#memory {
+    color: @color2;
+}
+
+#temperature {
+    color: @color2;
+}
+
+#temperature.critical {
+    color: @color1;
+    border-color: @color1;
+    background-color: @color0;
+    text-shadow: 0 0 10px @color1;
+    animation: blink 1s linear infinite;
+}
+
+/* Network */
+#network {
+    color: @color2;
+}
+
+#network.disconnected {
+    color: @color1;
+    border-color: @color1;
+    text-shadow: 0 0 10px @color1;
+}
+
+/* Audio */
+#pulseaudio {
+    color: @color2;
+}
+
+#pulseaudio.muted {
+    color: @color8;
+    border-color: @color8;
+    text-shadow: none;
+}
+
+#custom-audio-output {
+    color: @color2;
+    font-weight: bold;
+}
+
+#custom-audio-output:hover {
+    background-color: @color0;
+    box-shadow: 0 0 10px @color2;
+}
+
+/* Caffeine */
+#custom-caffeine.active {
+    color: @color3;
+    border-color: @color3;
+    background-color: @color0;
+    text-shadow: 0 0 10px @color3;
+}
+
+#custom-caffeine.inactive {
+    color: @color2;
+}
+
+/* System monitor */
+#custom-system-monitor {
+    color: @color2;
+    font-size: 16px;
+}
+
+#custom-system-monitor:hover {
+    background-color: @color0;
+    box-shadow: 0 0 10px @color2;
+}
+
+/* Backlight */
+#backlight {
+    color: @color2;
+}
+
+/* Tray */
+#tray {
+    background-color: @background;
+    border-color: @color0;
+}
+
+#tray > .passive {
+    opacity: 0.7;
+}
+
+#tray > .needs-attention {
+    background-color: @color1;
+    border-color: @color1;
+    animation: blink 1s linear infinite;
+}
+
+/* Tooltips */
+tooltip {
+    background-color: @background;
+    border: 3px solid @color2;
+    border-radius: 0px;
+    color: @color2;
+    font-family: "Monospace", monospace;
+    font-weight: bold;
+    text-shadow: 0 0 5px @color2;
+}
+
+tooltip label {
+    color: @color2;
+    font-family: "Monospace", monospace;
+}

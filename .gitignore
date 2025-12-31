@@ -1,0 +1,12 @@
+# Temporary files
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Generated files
+*.pyc
+__pycache__/
+
+# Local test configs
+test/

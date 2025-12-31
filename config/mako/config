@@ -1,0 +1,26 @@
+font=Monospace Bold 11
+background-color=#05090A
+text-color=#484249
+border-color=#484249
+border-size=3
+padding=15
+margin=15
+width=265
+height=180
+icons=0
+anchor=top-right
+default-timeout=3000
+
+[urgency=low]
+border-color=#484249
+default-timeout=2000
+
+[urgency=normal]
+border-color=#5D6369
+default-timeout=3000
+
+[urgency=critical]
+border-color=#2E6254
+background-color=#2E6254
+text-color=#05090A
+default-timeout=0
