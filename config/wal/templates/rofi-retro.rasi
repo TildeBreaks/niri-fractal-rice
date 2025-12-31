@@ -1,0 +1,91 @@
+/**
+ * Retro Gaming Rofi Theme - Pywal Dynamic Colors
+ * Classic terminal aesthetic with wallpaper-based colors
+ */
+
+configuration {
+    show-icons: false;
+    display-drun: ">> LAUNCH";
+    font: "Monospace Bold 12";
+    cycle: true;
+}
+
+* {
+    background-color: #05090A;
+    text-color: #484249;
+    border-color: #484249;
+}
+
+window {
+    width: 600px;
+    border: 4px;
+    padding: 0px;
+}
+
+mainbox {
+    padding: 20px;
+    children: [ inputbar, message, listview ];
+}
+
+inputbar {
+    border: 2px;
+    padding: 15px;
+    margin: 0px 0px 20px 0px;
+    children: [ prompt, entry ];
+}
+
+prompt {
+    padding: 0px 10px 0px 0px;
+    font: "Monospace Bold 14";
+}
+
+entry {
+    placeholder: "TYPE SELECTION...";
+}
+
+message {
+    border: 2px;
+    padding: 10px;
+    margin: 0px 0px 10px 0px;
+}
+
+listview {
+    columns: 1;
+    lines: 8;
+    spacing: 5px;
+    margin: 10px 0px 0px 0px;
+}
+
+element {
+    border: 2px;
+    border-color: #05090A;
+    padding: 12px 12px 12px 30px;
+    background-color: #05090A;
+}
+
+element-text {
+    background-color: transparent;
+    text-color: #484249;
+}
+
+element selected {
+    background-color: #05090A;
+    border-color: #484249;
+    text-color: #484249;
+    padding: 12px 12px 12px 15px;
+}
+
+element selected.normal {
+    background-color: #05090A;
+    border-color: #484249;
+    border-width: 3px;
+}
+
+element-text selected {
+    text-color: #484249;
+    font: "Monospace Bold 13";
+}
+
+element alternate {
+    background-color: #05090A;
+}

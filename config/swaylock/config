@@ -1,0 +1,28 @@
+# Swaylock configuration - Retro style
+# Colors will be set dynamically by lock script
+
+# Don't show failed attempts
+ignore-empty-password
+
+# Screen settings
+fade-in=0.2
+grace=2
+
+# Effects
+screenshots
+effect-blur=7x5
+effect-vignette=0.5:0.5
+
+# Clock
+clock
+timestr=%H:%M
+datestr=%a, %B %e
+indicator
+indicator-radius=120
+indicator-thickness=20
+
+# Font
+font=Monospace
+font-size=24
+
+# Colors set by lock script
