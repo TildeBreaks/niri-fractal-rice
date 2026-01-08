@@ -1,7 +1,10 @@
+// [NIRI-FRACTAL-RICE]
 // Niri Configuration - CachyOS Setup
 // Modern, smooth, and beautiful
 
 input {
+    focus-follows-mouse max-scroll-amount="0%"
+    warp-mouse-to-focus
     keyboard {
         xkb {
             layout "us"
@@ -25,17 +28,17 @@ output "DP-1" {
     mode "3440x1440@180"
     scale 1.0
     transform "normal"
-    position x=0 y=1080
-}
+    position x=0 y=0
+    }
 output "DP-2" {
     mode "1920x1080@200"
     scale 1.0
-    transform "180"
-    position x=760 y=0
+    transform "normal"
+    position x=0 y=0
 }
 
 layout {
-    gaps 8
+    gaps 12
     center-focused-column "never"
     
     preset-column-widths {
@@ -47,15 +50,15 @@ layout {
     default-column-width { proportion 0.5; }
     
     focus-ring {
+        active-gradient from="#3E3742" to="#bab2b0" angle=353 relative-to="workspace-view"
+        inactive-gradient from="#49423D" to="#473B46" angle=353 relative-to="workspace-view"
         width 3
-        active-color "#484249"
-        inactive-color "#05090A"
     }
     
     border {
+        active-gradient from="#3E3742" to="#bab2b0" angle=353 relative-to="workspace-view"
+        inactive-gradient from="#49423D" to="#473B46" angle=353 relative-to="workspace-view"
         width 2
-        active-color "#484249"
-        inactive-color "#05090A"
     }
 }
 
@@ -93,19 +96,62 @@ window-rule {
     geometry-corner-radius 12
     clip-to-geometry true
 }
+window-rule {
+    match is-focused=false
+    opacity 0.85
+}
+window-rule {
+    match is-focused=true
+    opacity 0.95
+}
+window-rule {
+    draw-border-with-background false
+}
+window-rule {
+    match app-id="^steam$" title="^notificationtoasts.*"
+    open-focused false
+    open-floating true
+    default-floating-position x=20 y=20 relative-to="top-right"
+}
+
+window-rule {
+    match app-id=r#"^termfx$"#
+
+    open-floating true
+
+    // Remove decorations for clean look
+    draw-border-with-background false
+
+    focus-ring {
+        active-gradient from="#3E3742" to="#bab2b0" angle=353 relative-to="workspace-view"
+        inactive-gradient from="#49423D" to="#473B46" angle=353 relative-to="workspace-view"
+        off
+    }
+
+    border {
+        active-gradient from="#3E3742" to="#bab2b0" angle=353 relative-to="workspace-view"
+        inactive-gradient from="#49423D" to="#473B46" angle=353 relative-to="workspace-view"
+        off
+    }
+}
+
+window-rule {
+    match app-id="org.quickshell"
+    open-floating true
+}
 
 prefer-no-csd
 
 environment {
-    QT_QPA_PLATFORM "wayland"
-    QT_WAYLAND_DISABLE_WINDOWDECORATION "1"
+    QT_QPA_PLATFORMTHEME "qt6ct"
+    QT_STYLE_OVERRIDE "Fusion"
     SDL_VIDEODRIVER "wayland"
     CLUTTER_BACKEND "wayland"
     XDG_CURRENT_DESKTOP "niri"
     XDG_SESSION_TYPE "wayland"
 }
 
-spawn-at-startup "~/.local/bin/generate-flame.sh"
+spawn-at-startup "~/.local/bin/startup-theme.sh"
 spawn-at-startup "swayidle-config.sh"
 
 cursor {
@@ -118,7 +164,7 @@ screenshot-path "~/Pictures/Screenshots/Screenshot_%Y-%m-%d_%H-%M-%S.png"
 binds {
     // Mod key is Super/Windows key
     Mod+Return { spawn "kitty"; }
-    Mod+D { spawn "rofi" "-show" "drun" "-theme" "/home/breaks/.config/rofi/retro.rasi"; }
+    Mod+D { spawn "quickshell" "-c" "/home/breaks/.config/quickshell/app-launcher"; }
     Mod+Shift+E { spawn "rofi" "-show" "power-menu" "-modi" "power-menu:rofi-power-menu"; }
     Mod+L { spawn "lock-screen.sh"; }
     Mod+Ctrl+W { spawn "bash" "-c" "~/.local/bin/launch-wallpaper-picker.sh"; }
@@ -127,7 +173,8 @@ binds {
     Mod+E { spawn "thunar-themed.sh"; }
     Mod+B {spawn "floorp"; }
     Mod+Shift+W { spawn "generate-sheep.sh"; }
-    Ctrl+Alt+P {spawn "wlogout"; }
+    Ctrl+Alt+P { spawn "/home/breaks/.local/bin/launch-wlogout.sh"; }
+    Mod+Z {spawn "/home/breaks/.local/bin/toggle-sidebar.sh"; }
 
     // Screenshots
     Mod+Shift+S { screenshot; }
@@ -212,7 +259,12 @@ binds {
     XF86AudioRaiseVolume { spawn "pamixer" "-i" "5"; }
     XF86AudioLowerVolume { spawn "pamixer" "-d" "5"; }
     XF86AudioMute { spawn "pamixer" "-t"; }
-    
+    XF86AudioPlay { spawn "playerctl" "play-pause"; }
+    XF86AudioPause { spawn "playerctl" "play-pause"; }
+    XF86AudioNext { spawn "playerctl" "next"; }
+    XF86AudioPrev { spawn "playerctl" "previous"; }
+    XF86AudioStop { spawn "playerctl" "stop"; }
+
     // Brightness (requires brightnessctl)
     XF86MonBrightnessUp { spawn "brightnessctl" "set" "5%+"; }
     XF86MonBrightnessDown { spawn "brightnessctl" "set" "5%-"; }
@@ -223,3 +275,5 @@ debug {
     wait-for-frame-completion-before-queueing false
     dbus-interfaces-in-non-session-instances false
 }
+
+

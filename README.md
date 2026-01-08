@@ -18,27 +18,70 @@ A complete Wayland desktop rice featuring Niri window manager with dynamic fract
 
 ## Requirements
 
-- Niri (window manager)
-- Waybar (status bar)
-- Quickshell (wallpaper picker widget)
-- Kitty (terminal)
-- Fastfetch (system info)
-- Fish (shell)
-- Pywal (color scheme generator)
-- flam3 (fractal generator)
-- Python 3 with PIL and NumPy
+### Core Dependencies
+- **niri** - Scrollable tiling window manager
+- **quickshell-git** - QML-based desktop shell (AUR)
+- **kitty** - GPU-accelerated terminal emulator
+- **python-pywal** - Color scheme generator
+- **flam3** - Fractal flame generator (AUR)
+- **swww** - Wayland wallpaper daemon
+- **jq** - JSON processor
+
+### UI Components
+- **rofi** - Application launcher
+- **mako** - Notification daemon
+- **swayidle** - Idle management daemon
+- **swaylock-effects** - Screen locker
+
+### Utilities
+- **brightnessctl** - Brightness control
+- **pamixer** - Audio control
+- **playerctl** - Media control
+- **btop** - System monitor
+- **wl-clipboard**, **grim**, **slurp** - Screenshot tools
+
+### Optional
+- **floorp-bin** - Firefox-based browser (AUR)
+- **cava**, **cmatrix**, **lolcat** - Terminal animations
+- **waybar** - Alternative status bar
+
+For a complete list, see the install script.
 
 ## Installation
 
-See [INSTALL.md](docs/INSTALL.md) for detailed installation instructions.
+### Automatic Installation (Recommended)
 
-Quick start:
+The install script automatically detects your distribution and installs all dependencies:
+
 ```bash
-git clone https://github.com/yourusername/niri-fractal-rice
+git clone https://github.com/TildeBreaks/niri-fractal-rice
 cd niri-fractal-rice
 chmod +x install.sh
 ./install.sh
 ```
+
+Supported distributions:
+- Arch Linux / CachyOS (full support)
+- Debian / Ubuntu (experimental)
+- Fedora (experimental)
+
+### Manual Installation
+
+If you prefer to install manually or the script doesn't work for your distribution:
+
+1. Install all dependencies listed above
+2. Copy configs: `cp -r config/* ~/.config/`
+3. Copy scripts: `cp scripts/* ~/.local/bin/ && chmod +x ~/.local/bin/*.sh`
+4. Copy systemd services: `cp systemd/*.service ~/.config/systemd/user/`
+5. Enable services: `systemctl --user enable quickshell-topbar quickshell-sidebar mako`
+6. Generate initial theme: `wal -i /path/to/wallpaper.jpg -a 85`
+
+## Post-Installation
+
+After installation:
+1. Log out of your current session
+2. Select "Niri" at your login screen
+3. Log in and enjoy your fractal rice!
 
 ## Directory Structure
 
@@ -46,22 +89,32 @@ chmod +x install.sh
 niri-fractal-rice/
 ├── config/
 │   ├── niri/              # Niri window manager config
-│   ├── waybar/            # Waybar configuration and styling
-│   ├── quickshell/        # Wallpaper picker widget
+│   ├── quickshell/        # Quickshell UI components
+│   │   ├── topbar/        # Top status bar
+│   │   ├── sidebar/       # Quick settings sidebar
+│   │   ├── bottombar/     # Bottom terminal bar
+│   │   ├── termfx/        # Terminal effects widget
+│   │   ├── app-launcher/  # Application launcher
+│   │   └── wallpaper-picker.qml  # Wallpaper selection UI
+│   ├── waybar/            # Waybar configuration (optional)
 │   ├── kitty/             # Terminal config and fractal generation
-│   ├── fastfetch/         # System info display
-│   ├── fish/              # Shell configuration
-│   ├── wal/               # Pywal hooks
-│   ├── rofi/              # Application launcher theme
-│   └── mako/              # Notification daemon config
-├── scripts/               # Utility scripts
-│   ├── generate-flame.sh
-│   ├── update-niri-colors.sh
-│   ├── update-floorp-theme.sh
-│   ├── create-gtk-theme.sh
-│   └── update-sddm-theme.sh
-├── docs/                  # Documentation
-└── install.sh             # Installation script
+│   ├── wal/               # Pywal hooks for auto-theming
+│   └── [other configs]    # Rofi, Mako, Swaylock, etc.
+├── scripts/               # 25+ utility scripts
+│   ├── generate-flame.sh          # Generate fractal wallpapers
+│   ├── generate-sheep.sh          # Alternative fractal generator
+│   ├── update-niri-colors.sh      # Apply colors to niri
+│   ├── startup-theme.sh           # Initialize theme on startup
+│   ├── toggle-sidebar.sh          # Toggle quickshell sidebar
+│   ├── wallpaper-watcher.sh       # Monitor wallpaper changes
+│   ├── generate-fractal.py        # Python fractal generator
+│   ├── generate-palette.py        # Palette generator
+│   └── [theme updaters]           # GTK, Qt, browser themes
+├── systemd/               # Systemd user services
+│   ├── quickshell-topbar.service
+│   └── quickshell-sidebar.service
+├── README.md              # This file
+└── install.sh             # Automated installation script
 ```
 
 ## Usage

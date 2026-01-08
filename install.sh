@@ -1,86 +1,354 @@
 #!/bin/bash
-# Niri Fractal Rice - Installation Script
+# Niri Fractal Rice - Complete Installation Script
+# This script installs all dependencies and configurations for the niri-fractal-rice setup
 
 set -e
 
-echo "=================================="
-echo "Niri Fractal Rice Installer"
-echo "=================================="
+echo "=========================================="
+echo "   Niri Fractal Rice Complete Installer"
+echo "=========================================="
 echo ""
 
 # Check if running as root
-if [ "$EUID" -eq 0 ]; then 
+if [ "$EUID" -eq 0 ]; then
     echo "❌ Please do not run this script as root"
     exit 1
 fi
 
-# Detect package manager
+# Detect package manager and distro
 if command -v pacman &> /dev/null; then
     PKG_MANAGER="pacman"
-    echo "📦 Detected: Arch/CachyOS"
+    DISTRO="arch"
+    echo "📦 Detected: Arch Linux / CachyOS"
 elif command -v apt &> /dev/null; then
     PKG_MANAGER="apt"
-    echo "📦 Detected: Debian/Ubuntu"
+    DISTRO="debian"
+    echo "📦 Detected: Debian / Ubuntu"
 elif command -v dnf &> /dev/null; then
     PKG_MANAGER="dnf"
+    DISTRO="fedora"
     echo "📦 Detected: Fedora"
 else
     echo "❌ Unsupported package manager"
+    echo "This script supports: pacman (Arch/CachyOS), apt (Debian/Ubuntu), dnf (Fedora)"
     exit 1
 fi
 
 echo ""
-echo "⚠️  This will install packages and overwrite existing configs!"
-read -p "Continue? (y/N) " -n 1 -r
+echo "⚠️  This installer will:"
+echo "   • Install 40+ packages and dependencies"
+echo "   • Overwrite existing niri/quickshell/kitty configs"
+echo "   • Create backups of your current configs"
+echo "   • Install scripts to ~/.local/bin"
+echo ""
+read -p "Continue with installation? (y/N) " -n 1 -r
 echo
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    echo "Installation cancelled."
     exit 1
 fi
 
 # Create backup
-BACKUP_DIR="$HOME/.config-backup-$(date +%Y%m%d_%H%M%S)"
+BACKUP_DIR="$HOME/.config-backup-niri-$(date +%Y%m%d_%H%M%S)"
 echo ""
 echo "💾 Creating backup at $BACKUP_DIR"
 mkdir -p "$BACKUP_DIR"
-for dir in niri waybar quickshell kitty fastfetch fish; do
+for dir in niri waybar quickshell kitty fastfetch fish mako rofi swaylock; do
     if [ -d ~/.config/$dir ]; then
         cp -r ~/.config/$dir "$BACKUP_DIR/" 2>/dev/null || true
     fi
 done
+if [ -d ~/.local/bin ]; then
+    mkdir -p "$BACKUP_DIR/bin"
+    cp ~/.local/bin/*.sh "$BACKUP_DIR/bin/" 2>/dev/null || true
+    cp ~/.local/bin/*.py "$BACKUP_DIR/bin/" 2>/dev/null || true
+fi
 echo "✅ Backup created"
 
-# Install dependencies
+# Install dependencies based on distro
 echo ""
-echo "📥 Installing dependencies..."
-# Add appropriate package manager commands here based on PKG_MANAGER
+echo "📥 Installing dependencies (this may take a while)..."
+echo ""
 
-# Copy configurations
+if [ "$DISTRO" = "arch" ]; then
+    # Core dependencies
+    CORE_PKGS=(
+        niri
+        kitty
+        python
+        python-pip
+        python-pillow
+        python-numpy
+        jq
+        bash
+    )
+
+    # UI and shell components
+    UI_PKGS=(
+        rofi
+        mako
+        swayidle
+        swaylock-effects
+        brightnessctl
+        pamixer
+        playerctl
+    )
+
+    # Theming and wallpaper
+    THEME_PKGS=(
+        python-pywal
+        swww
+    )
+
+    # File managers and browsers
+    APP_PKGS=(
+        thunar
+        firefox
+    )
+
+    # System utilities
+    UTIL_PKGS=(
+        btop
+        wl-clipboard
+        grim
+        slurp
+        libnotify
+        pulseaudio
+        qt6ct
+        polkit-gnome
+    )
+
+    # Optional terminal eye-candy
+    OPTIONAL_PKGS=(
+        cava
+        cmatrix
+        lolcat
+        figlet
+        cbonsai
+        fortune-mod
+    )
+
+    echo "Installing core packages..."
+    sudo pacman -S --needed --noconfirm "${CORE_PKGS[@]}"
+
+    echo "Installing UI components..."
+    sudo pacman -S --needed --noconfirm "${UI_PKGS[@]}"
+
+    echo "Installing theming tools..."
+    sudo pacman -S --needed --noconfirm "${THEME_PKGS[@]}"
+
+    echo "Installing applications..."
+    sudo pacman -S --needed --noconfirm "${APP_PKGS[@]}"
+
+    echo "Installing system utilities..."
+    sudo pacman -S --needed --noconfirm "${UTIL_PKGS[@]}"
+
+    # AUR packages (if yay is available)
+    if command -v yay &> /dev/null; then
+        echo "Installing AUR packages..."
+        AUR_PKGS=(
+            quickshell-git
+            flam3
+            floorp-bin
+        )
+        yay -S --needed --noconfirm "${AUR_PKGS[@]}" || echo "⚠️  Some AUR packages failed to install"
+    else
+        echo ""
+        echo "⚠️  YAY AUR helper not found. Please manually install:"
+        echo "   • quickshell-git (required for UI)"
+        echo "   • flam3 (required for fractal generation)"
+        echo "   • floorp-bin (optional browser)"
+        echo ""
+        echo "Install yay with:"
+        echo "   git clone https://aur.archlinux.org/yay.git && cd yay && makepkg -si"
+    fi
+
+    # Optional packages
+    read -p "Install optional terminal animations (cava, cmatrix, etc.)? (y/N) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        sudo pacman -S --needed --noconfirm "${OPTIONAL_PKGS[@]}"
+    fi
+
+elif [ "$DISTRO" = "debian" ]; then
+    echo "⚠️  Debian/Ubuntu support is experimental"
+    sudo apt update
+
+    DEBIAN_PKGS=(
+        kitty
+        python3
+        python3-pip
+        python3-pil
+        python3-numpy
+        jq
+        rofi
+        mako-notifier
+        swayidle
+        swaylock
+        brightnessctl
+        pamixer
+        playerctl
+        thunar
+        firefox-esr
+        btop
+        wl-clipboard
+        grim
+        slurp
+        libnotify-bin
+        pulseaudio
+        qt6ct
+        polkit-gnome
+    )
+
+    sudo apt install -y "${DEBIAN_PKGS[@]}"
+
+    echo ""
+    echo "⚠️  Manual installation required for:"
+    echo "   • niri (compile from source: https://github.com/YaLTeR/niri)"
+    echo "   • quickshell (compile from source: https://github.com/quickshell/quickshell)"
+    echo "   • pywal (pip install pywal)"
+    echo "   • swww (cargo install swww)"
+    echo "   • flam3 (compile from source)"
+
+elif [ "$DISTRO" = "fedora" ]; then
+    echo "⚠️  Fedora support is experimental"
+    sudo dnf install -y \
+        kitty \
+        python3 \
+        python3-pip \
+        python3-pillow \
+        python3-numpy \
+        jq \
+        rofi \
+        mako \
+        swayidle \
+        swaylock \
+        brightnessctl \
+        pamixer \
+        playerctl \
+        thunar \
+        firefox \
+        btop \
+        wl-clipboard \
+        grim \
+        slurp \
+        libnotify \
+        pulseaudio \
+        qt6ct \
+        polkit-gnome
+
+    echo ""
+    echo "⚠️  Manual installation required for:"
+    echo "   • niri (compile from source: https://github.com/YaLTeR/niri)"
+    echo "   • quickshell (compile from source: https://github.com/quickshell/quickshell)"
+    echo "   • pywal (pip install pywal)"
+    echo "   • swww (cargo install swww)"
+    echo "   • flam3 (compile from source)"
+fi
+
+# Install Python packages
+echo ""
+echo "📦 Installing Python packages..."
+pip install --user pywal pillow numpy 2>/dev/null || pip3 install --user pywal pillow numpy
+
+# Create necessary directories
+echo ""
+echo "📁 Creating directory structure..."
+mkdir -p ~/.config
+mkdir -p ~/.local/bin
+mkdir -p ~/Pictures/wallpapers
+mkdir -p ~/.cache/wal
+
+# Install configurations
 echo ""
 echo "📋 Installing configurations..."
-mkdir -p ~/.config ~/.local/bin
 
-cp -r config/* ~/.config/
-cp scripts/* ~/.local/bin/
-chmod +x ~/.local/bin/*.sh
+# Copy all config files
+if [ -d "config" ]; then
+    cp -r config/* ~/.config/
+    echo "✅ Config files installed"
+fi
 
-echo "✅ Configurations installed"
+# Copy all scripts
+if [ -d "scripts" ]; then
+    cp scripts/* ~/.local/bin/
+    chmod +x ~/.local/bin/*.sh
+    chmod +x ~/.local/bin/*.py 2>/dev/null || true
+    echo "✅ Scripts installed to ~/.local/bin"
+fi
 
-# Generate initial fractals
+# Install systemd services
+if [ -d "systemd" ]; then
+    mkdir -p ~/.config/systemd/user
+    cp systemd/*.service ~/.config/systemd/user/
+    echo "✅ Systemd services installed"
+fi
+
+# Set up systemd services
 echo ""
-echo "🎨 Generating initial fractals..."
-if [ -x ~/.local/bin/generate-flame.sh ]; then
-    ~/.local/bin/generate-flame.sh
+echo "🔧 Configuring systemd services..."
+systemctl --user daemon-reload
+systemctl --user enable quickshell-topbar.service 2>/dev/null || echo "⚠️  quickshell-topbar service not available"
+systemctl --user enable quickshell-sidebar.service 2>/dev/null || echo "⚠️  quickshell-sidebar service not available"
+systemctl --user enable mako.service 2>/dev/null || echo "⚠️  mako service not available"
+
+# Generate initial theme
+echo ""
+echo "🎨 Generating initial theme..."
+
+# Check if we have a wallpaper to use
+if [ -f ~/Pictures/wallpapers/*.jpg ] || [ -f ~/Pictures/wallpapers/*.png ]; then
+    WALLPAPER=$(find ~/Pictures/wallpapers -type f \( -name "*.jpg" -o -name "*.png" \) | head -1)
+    if [ -n "$WALLPAPER" ]; then
+        echo "Using existing wallpaper: $WALLPAPER"
+        wal -i "$WALLPAPER" -a 85 -q
+    fi
+else
+    echo "📸 No wallpaper found. Generating fractal..."
+    if [ -x ~/.local/bin/generate-flame.sh ]; then
+        ~/.local/bin/generate-flame.sh
+        # Find the generated wallpaper
+        WALLPAPER=$(find ~/Pictures/wallpapers -type f -name "*.png" | head -1)
+        if [ -n "$WALLPAPER" ]; then
+            wal -i "$WALLPAPER" -a 85 -q
+        fi
+    fi
+fi
+
+# Apply initial theme
+if [ -x ~/.local/bin/startup-theme.sh ]; then
+    ~/.local/bin/startup-theme.sh 2>/dev/null || true
 fi
 
 echo ""
-echo "=================================="
+echo "=========================================="
 echo "✨ Installation Complete! ✨"
-echo "=================================="
+echo "=========================================="
 echo ""
 echo "Next steps:"
-echo "1. Log out and select Niri as your session"
-echo "2. Set a wallpaper with: wal -i /path/to/image"
-echo "3. Enjoy your fractal rice!"
+echo ""
+echo "1. Log out of your current session"
+echo "2. At the login screen, select 'Niri' as your session"
+echo "3. Log in to start using your new setup"
+echo ""
+echo "Useful commands:"
+echo "  • Change wallpaper: wal -i /path/to/image.jpg"
+echo "  • Generate fractal: ~/.local/bin/generate-flame.sh"
+echo "  • Toggle sidebar: Mod+D (or Super+D)"
+echo "  • Launch apps: Mod+R (or Super+R)"
+echo "  • Lock screen: Mod+Escape"
+echo ""
+echo "Configuration files:"
+echo "  • Niri config: ~/.config/niri/config.kdl"
+echo "  • Quickshell UI: ~/.config/quickshell/"
+echo "  • Scripts: ~/.local/bin/"
 echo ""
 echo "Backup location: $BACKUP_DIR"
-
+echo ""
+echo "If you encounter issues:"
+echo "  1. Check ~/.local/bin scripts have execute permissions"
+echo "  2. Verify quickshell is installed (quickshell --version)"
+echo "  3. Check systemd services: systemctl --user status quickshell-topbar"
+echo "  4. Review niri logs: journalctl --user -u niri"
+echo ""
+echo "Enjoy your fractal rice! 🌈"
