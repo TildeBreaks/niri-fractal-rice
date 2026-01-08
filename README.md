@@ -8,9 +8,9 @@ A complete Wayland desktop rice featuring Niri window manager with dynamic fract
 - 🎨 **Automatic Theming**: Pywal generates color schemes from wallpapers
 - 🖼️ **Themed Terminal Fractals**: Kitty terminal displays matching fractals on startup
 - ⚡ **Niri Window Manager**: Scrollable tiling with smooth animations
-- 🎯 **Quickshell Wallpaper Picker**: Visual wallpaper selector with random generation
-- 📊 **Waybar**: Customized status bar with theme integration
-- 🐟 **Fish Shell**: Modern shell with fractal greeting
+- 🎛️ **Quickshell UI**: Complete QML-based interface (topbar, sidebar, app launcher, wallpaper picker)
+- 🔧 **Terminal Effects Widget**: Bottom bar with animated terminal effects
+- 📊 **System Monitoring**: Real-time CPU, memory, network stats in topbar
 
 ## Preview
 
@@ -28,7 +28,6 @@ A complete Wayland desktop rice featuring Niri window manager with dynamic fract
 - **jq** - JSON processor
 
 ### UI Components
-- **rofi** - Application launcher
 - **mako** - Notification daemon
 - **swayidle** - Idle management daemon
 - **swaylock-effects** - Screen locker
@@ -40,10 +39,11 @@ A complete Wayland desktop rice featuring Niri window manager with dynamic fract
 - **btop** - System monitor
 - **wl-clipboard**, **grim**, **slurp** - Screenshot tools
 
-### Optional
+### Optional (Legacy Alternatives)
+- **rofi** - Application launcher (if you prefer it over quickshell app-launcher)
+- **waybar** - Status bar (if you prefer it over quickshell topbar)
 - **floorp-bin** - Firefox-based browser (AUR)
 - **cava**, **cmatrix**, **lolcat** - Terminal animations
-- **waybar** - Alternative status bar
 
 For a complete list, see the install script.
 
@@ -89,23 +89,25 @@ After installation:
 niri-fractal-rice/
 ├── config/
 │   ├── niri/              # Niri window manager config
-│   ├── quickshell/        # Quickshell UI components
-│   │   ├── topbar/        # Top status bar
+│   ├── quickshell/        # Quickshell UI components (PRIMARY UI)
+│   │   ├── topbar/        # Top status bar (replaces waybar)
 │   │   ├── sidebar/       # Quick settings sidebar
 │   │   ├── bottombar/     # Bottom terminal bar
 │   │   ├── termfx/        # Terminal effects widget
-│   │   ├── app-launcher/  # Application launcher
+│   │   ├── app-launcher/  # Application launcher (replaces rofi)
 │   │   └── wallpaper-picker.qml  # Wallpaper selection UI
-│   ├── waybar/            # Waybar configuration (optional)
+│   ├── waybar/            # [Optional] Legacy waybar config
 │   ├── kitty/             # Terminal config and fractal generation
 │   ├── wal/               # Pywal hooks for auto-theming
-│   └── [other configs]    # Rofi, Mako, Swaylock, etc.
+│   └── [other configs]    # Mako, Swaylock, etc.
 ├── scripts/               # 25+ utility scripts
 │   ├── generate-flame.sh          # Generate fractal wallpapers
 │   ├── generate-sheep.sh          # Alternative fractal generator
 │   ├── update-niri-colors.sh      # Apply colors to niri
 │   ├── startup-theme.sh           # Initialize theme on startup
 │   ├── toggle-sidebar.sh          # Toggle quickshell sidebar
+│   ├── toggle-bottombar.sh        # Toggle bottombar
+│   ├── toggle-termfx.sh           # Toggle terminal effects
 │   ├── wallpaper-watcher.sh       # Monitor wallpaper changes
 │   ├── generate-fractal.py        # Python fractal generator
 │   ├── generate-palette.py        # Palette generator
@@ -119,9 +121,19 @@ niri-fractal-rice/
 
 ## Usage
 
+### Key Bindings (Default)
+
+- **Mod+D** - Open quickshell app launcher
+- **Mod+Return** - Open Kitty terminal
+- **Mod+Q** - Close window
+- **Mod+Escape** - Lock screen
+- **Mod+Shift+E** - Power menu (logout/shutdown/reboot)
+
+(See ~/.config/niri/config.kdl for complete keybind list)
+
 ### Changing Wallpapers
 
-Use the Quickshell wallpaper picker or click the RND button to generate a new fractal wallpaper.
+Use the quickshell wallpaper picker or click the RND button to generate a new fractal wallpaper. The theme will automatically update across all UI components.
 
 ### Terminal Fractals
 
@@ -129,7 +141,7 @@ Open Kitty terminal to see a themed fractal. Each new terminal shows a different
 
 ### Theme Updates
 
-Themes automatically update when you change wallpapers. All applications (Waybar, Rofi, Mako, terminals, etc.) will adapt to the new color scheme.
+Themes automatically update when you change wallpapers. All quickshell components (topbar, sidebar, app-launcher), Mako notifications, and terminals adapt to the new color scheme.
 
 ## Customization
 

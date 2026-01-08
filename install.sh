@@ -48,6 +48,39 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     exit 1
 fi
 
+# Ask about optional UI components
+echo ""
+echo "📋 UI Component Selection"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "This setup uses Quickshell for all UI components:"
+echo "  • Topbar (status bar with system info)"
+echo "  • Sidebar (quick settings)"
+echo "  • App Launcher (application menu)"
+echo "  • Wallpaper Picker"
+echo ""
+echo "Legacy alternatives are available:"
+echo "  • Waybar (alternative status bar)"
+echo "  • Rofi (alternative app launcher)"
+echo ""
+
+INSTALL_ROFI="n"
+INSTALL_WAYBAR="n"
+
+read -p "Install Rofi as alternative app launcher? (y/N) " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    INSTALL_ROFI="y"
+    echo "  ✓ Will install Rofi and configure keybind"
+fi
+
+read -p "Install Waybar as alternative status bar? (y/N) " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    INSTALL_WAYBAR="y"
+    echo "  ✓ Will install Waybar"
+fi
+
 # Create backup
 BACKUP_DIR="$HOME/.config-backup-niri-$(date +%Y%m%d_%H%M%S)"
 echo ""
@@ -85,7 +118,6 @@ if [ "$DISTRO" = "arch" ]; then
 
     # UI and shell components
     UI_PKGS=(
-        rofi
         mako
         swayidle
         swaylock-effects
@@ -170,6 +202,17 @@ if [ "$DISTRO" = "arch" ]; then
         sudo pacman -S --needed --noconfirm "${OPTIONAL_PKGS[@]}"
     fi
 
+    # Install optional UI alternatives
+    if [ "$INSTALL_ROFI" = "y" ]; then
+        echo "Installing Rofi..."
+        sudo pacman -S --needed --noconfirm rofi
+    fi
+
+    if [ "$INSTALL_WAYBAR" = "y" ]; then
+        echo "Installing Waybar..."
+        sudo pacman -S --needed --noconfirm waybar
+    fi
+
 elif [ "$DISTRO" = "debian" ]; then
     echo "⚠️  Debian/Ubuntu support is experimental"
     sudo apt update
@@ -181,7 +224,6 @@ elif [ "$DISTRO" = "debian" ]; then
         python3-pil
         python3-numpy
         jq
-        rofi
         mako-notifier
         swayidle
         swaylock
@@ -202,6 +244,17 @@ elif [ "$DISTRO" = "debian" ]; then
 
     sudo apt install -y "${DEBIAN_PKGS[@]}"
 
+    # Install optional UI alternatives
+    if [ "$INSTALL_ROFI" = "y" ]; then
+        echo "Installing Rofi..."
+        sudo apt install -y rofi
+    fi
+
+    if [ "$INSTALL_WAYBAR" = "y" ]; then
+        echo "Installing Waybar..."
+        sudo apt install -y waybar
+    fi
+
     echo ""
     echo "⚠️  Manual installation required for:"
     echo "   • niri (compile from source: https://github.com/YaLTeR/niri)"
@@ -219,7 +272,6 @@ elif [ "$DISTRO" = "fedora" ]; then
         python3-pillow \
         python3-numpy \
         jq \
-        rofi \
         mako \
         swayidle \
         swaylock \
@@ -236,6 +288,17 @@ elif [ "$DISTRO" = "fedora" ]; then
         pulseaudio \
         qt6ct \
         polkit-gnome
+
+    # Install optional UI alternatives
+    if [ "$INSTALL_ROFI" = "y" ]; then
+        echo "Installing Rofi..."
+        sudo dnf install -y rofi
+    fi
+
+    if [ "$INSTALL_WAYBAR" = "y" ]; then
+        echo "Installing Waybar..."
+        sudo dnf install -y waybar
+    fi
 
     echo ""
     echo "⚠️  Manual installation required for:"
@@ -267,6 +330,18 @@ echo "📋 Installing configurations..."
 if [ -d "config" ]; then
     cp -r config/* ~/.config/
     echo "✅ Config files installed"
+fi
+
+# Modify niri config if Rofi is selected
+if [ "$INSTALL_ROFI" = "y" ]; then
+    echo ""
+    echo "🔧 Configuring niri to use Rofi for app launcher..."
+    if [ -f ~/.config/niri/config.kdl ]; then
+        # Replace the quickshell app-launcher keybind with rofi (Mod+D)
+        sed -i 's|Mod+D { spawn "quickshell" "-c" "[^"]*app-launcher[^"]*"; }|Mod+D { spawn "rofi" "-show" "drun"; }|g' ~/.config/niri/config.kdl
+        echo "  ✓ Niri config updated to use Rofi (Mod+D)"
+        echo "  ℹ️  You can switch back to quickshell app-launcher by editing ~/.config/niri/config.kdl"
+    fi
 fi
 
 # Copy all scripts
