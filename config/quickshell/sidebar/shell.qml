@@ -894,10 +894,10 @@ ShellRoot {
             
             Process {
                 id: wallpaperChangeChecker
-                // FIXED: Check if file EXISTS (not absent), consume it, then reload
-                command: ["bash", "-c", "if [ -f ~/.cache/wallpaper-changed ]; then rm -f ~/.cache/wallpaper-changed && echo 'reload'; fi"]
+                // Check if signal file exists (don't delete immediately - let topbar see it too)
+                command: ["bash", "-c", "if [ -f ~/.cache/wallpaper-changed ]; then echo 'reload'; fi"]
                 running: false
-                
+
                 stdout: SplitParser {
                     onRead: data => {
                         if (data.trim() === "reload") {
@@ -906,9 +906,18 @@ ShellRoot {
                             // Also reload colors
                             colorLoader.colorLines = []
                             colorLoader.running = true
+                            // Delete signal file after delay so topbar can see it
+                            signalFileCleanup.running = true
                         }
                     }
                 }
+            }
+
+            // Delayed cleanup of signal file (gives topbar time to detect it)
+            Process {
+                id: signalFileCleanup
+                command: ["bash", "-c", "sleep 3 && rm -f ~/.cache/wallpaper-changed"]
+                running: false
             }
             
             ColumnLayout {

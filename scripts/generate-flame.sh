@@ -61,22 +61,23 @@ if [ -f "$OUTPUT" ]; then
     
     # Apply as wallpaper and theme
     wal -i "$OUTPUT" -a 85 -q
-    sleep 2
-    cp ~/.cache/wal/retro.rasi ~/.config/rofi/retro.rasi
-    cp ~/.cache/wal/mako-config ~/.config/mako/config
     ~/.local/bin/update-niri-colors.sh
-    ~/.local/bin/update-floorp-theme.sh
+    ~/.local/bin/generate-qt-theme.sh
+    sleep 1
+    cp ~/.cache/wal/retro.rasi ~/.config/rofi/retro.rasi 2>/dev/null
+    cp ~/.cache/wal/mako-config ~/.config/mako/config 2>/dev/null
+    ~/.local/bin/update-floorp-theme.sh 2>/dev/null
     ~/.local/bin/create-gtk-theme.sh 2>/dev/null
     ~/.local/bin/update-sddm-theme.sh 2>/dev/null
+    ~/.local/bin/update-wlogout-theme.sh 2>/dev/null
     killall mako 2>/dev/null
-    sleep 0.5
+    sleep 0.3
     killall thunar 2>/dev/null &
-    killall swaybg 2>/dev/null
-    sleep 0.3
-    swaybg -i "$OUTPUT" -m fill &
-    sleep 0.3
-    systemctl --user restart waybar.service
-    systemctl --user start mako.service
+    # Use swww for wallpaper (consistent with manual selection)
+    swww img "$OUTPUT" --transition-type fade --transition-duration 2 --transition-fps 60
+    systemctl --user start mako.service 2>/dev/null
+    # Create signal file for QuickShell bars to detect
+    touch ~/.cache/wallpaper-changed
     notify-send 'FRACTAL FLAME' 'New flame generated and applied!' -t 2000
 else
     echo "✗ Failed to render fractal flame"

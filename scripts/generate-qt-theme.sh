@@ -5,6 +5,9 @@
 # Source pywal colors
 source ~/.cache/wal/colors.sh
 
+# Get the actual home directory (don't use ~ in config files)
+HOME_DIR="$HOME"
+
 # Convert hex to Qt format (#aarrggbb - fully opaque)
 to_qt() {
     echo "#ff${1#\#}"
@@ -56,10 +59,10 @@ disabled_colors=${DISABLED}
 inactive_colors=${INACTIVE}
 EOF
 
-# Create Qt5ct config
-cat > ~/.config/qt5ct/qt5ct.conf << 'CFGEOF'
+# Create Qt5ct config (use full path, not ~)
+cat > ~/.config/qt5ct/qt5ct.conf << CFGEOF
 [Appearance]
-color_scheme_path=~/.config/qt5ct/colors/pywal.conf
+color_scheme_path=${HOME_DIR}/.config/qt5ct/colors/pywal.conf
 custom_palette=true
 icon_theme=breeze-dark
 standard_dialogs=default
@@ -85,10 +88,10 @@ underline_shortcut=1
 wheel_scroll_lines=3
 CFGEOF
 
-# Create Qt6ct config
-cat > ~/.config/qt6ct/qt6ct.conf << 'CFGEOF'
+# Create Qt6ct config (use full path, not ~)
+cat > ~/.config/qt6ct/qt6ct.conf << CFGEOF
 [Appearance]
-color_scheme_path=~/.config/qt6ct/colors/pywal.conf
+color_scheme_path=${HOME_DIR}/.config/qt6ct/colors/pywal.conf
 custom_palette=true
 icon_theme=breeze-dark
 standard_dialogs=default
@@ -113,5 +116,39 @@ toolbutton_style=4
 underline_shortcut=1
 wheel_scroll_lines=3
 CFGEOF
+
+# Touch the config files to trigger any inotify watchers
+sleep 0.1
+touch ~/.config/qt5ct/qt5ct.conf
+touch ~/.config/qt6ct/qt6ct.conf
+
+# Try to notify xsettingsd if running (for X11 apps under XWayland)
+if pgrep -x xsettingsd > /dev/null; then
+    killall -HUP xsettingsd 2>/dev/null
+fi
+
+# Qt apps don't hot-reload themes - they read config at startup.
+# Restart common Qt apps so they pick up new colors.
+# Use background processes to avoid blocking.
+(
+    # Restart dolphin if running (file manager)
+    if pgrep -x dolphin > /dev/null; then
+        killall dolphin 2>/dev/null
+        sleep 0.3
+        nohup dolphin &>/dev/null &
+    fi
+
+    # Restart pcmanfm-qt if running
+    if pgrep -x pcmanfm-qt > /dev/null; then
+        killall pcmanfm-qt 2>/dev/null
+        sleep 0.3
+        nohup pcmanfm-qt &>/dev/null &
+    fi
+
+    # Restart kvantummanager if running
+    if pgrep -x kvantummanager > /dev/null; then
+        killall kvantummanager 2>/dev/null
+    fi
+) &
 
 echo "Qt themes generated from pywal colors!"
