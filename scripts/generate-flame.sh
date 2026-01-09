@@ -17,52 +17,28 @@ if [ ! -s "$GENOME_FILE" ]; then
     exit 1
 fi
 
-echo "Rendering fractal flame at 3440x1440..."
+echo "Rendering fractal flame at 3440x1440 (high quality)..."
 
-# Edit the genome to set proper size, scale, and oversample
+# Edit the genome for high quality output
+# - quality: iterations per pixel (higher = more detail, less noise)
+# - oversample: anti-aliasing factor (higher = smoother edges)
+# - scale: zoom level
 sed -i 's/size="[0-9]* [0-9]*"/size="3440 1440"/' "$GENOME_FILE"
-sed -i 's/scale="[0-9.]*"/scale="400"/' "$GENOME_FILE"
-sed -i 's/oversample="[0-9]*"/oversample="3"/' "$GENOME_FILE"
-sed -i 's/quality="[0-9]*"/quality="2000"/' "$GENOME_FILE"
+sed -i 's/scale="[0-9.]*"/scale="500"/' "$GENOME_FILE"
+sed -i 's/supersample="[0-9]*"/supersample="2"/' "$GENOME_FILE"
+sed -i 's/quality="[0-9]*"/quality="3000"/' "$GENOME_FILE"
+sed -i 's/estimator_radius="[0-9]*"/estimator_radius="11"/' "$GENOME_FILE"
 
 env out="$OUTPUT" format=png flam3-render < "$GENOME_FILE" 2>/dev/null
 
 if [ -f "$OUTPUT" ]; then
     echo "✓ Fractal flame saved to $OUTPUT"
 
-    # Generate 5 kitty fractals with the same theme
-    echo "Generating 5 kitty fractals..."
-    KITTY_FRACTAL_DIR="$HOME/.config/kitty/fractals"
-    mkdir -p "$KITTY_FRACTAL_DIR"
-
-    # Clear old fractals
-    rm -f "$KITTY_FRACTAL_DIR"/fractal_*.png
-
-    # Generate 5 new ones
-    for i in {1..5}; do
-        KITTY_GENOME="/tmp/kitty-genome-$i-$TIMESTAMP.flam3"
-        env symmetry=$((RANDOM % 12 - 6)) flam3-genome > "$KITTY_GENOME" 2>/dev/null
-
-        if [ -s "$KITTY_GENOME" ]; then
-            # Smaller size and quality for faster rendering
-            sed -i 's/size="[0-9]* [0-9]*"/size="1920 1080"/' "$KITTY_GENOME"
-            sed -i 's/scale="[0-9.]*"/scale="300"/' "$KITTY_GENOME"
-            sed -i 's/oversample="[0-9]*"/oversample="2"/' "$KITTY_GENOME"
-            sed -i 's/quality="[0-9]*"/quality="800"/' "$KITTY_GENOME"
-
-            env out="$KITTY_FRACTAL_DIR/fractal_$i.png" format=png flam3-render < "$KITTY_GENOME" 2>/dev/null &
-            rm -f "$KITTY_GENOME"
-        fi
-    done
-
-    # Wait for all fractals to finish
-    wait
-    echo "✓ Kitty fractals generated"
-    
     # Apply as wallpaper and theme
     wal -i "$OUTPUT" -a 85 -q
     ~/.local/bin/update-niri-colors.sh
     ~/.local/bin/generate-qt-theme.sh
+    ~/.local/bin/generate-terminal-logo.sh
     sleep 1
     cp ~/.cache/wal/retro.rasi ~/.config/rofi/retro.rasi 2>/dev/null
     cp ~/.cache/wal/mako-config ~/.config/mako/config 2>/dev/null

@@ -41,11 +41,31 @@ SELECTED_INDEX=$(echo -en "$OPTIONS" | wofi \
 
 SELECTED="${IMAGE_MAP[$SELECTED_INDEX]}"
 
-# Apply everything
+# Apply pywal colors
 wal -i "$WALLPAPER_DIR/$SELECTED" -a 85 -q
+
+# Update all theme components
+~/.local/bin/update-niri-colors.sh 2>/dev/null
+~/.local/bin/generate-qt-theme.sh 2>/dev/null
+~/.local/bin/generate-terminal-logo.sh 2>/dev/null
+sleep 1
 cp ~/.cache/wal/retro.rasi ~/.config/rofi/retro.rasi 2>/dev/null
 cp ~/.cache/wal/mako-config ~/.config/mako/config 2>/dev/null
-killall swaybg 2>/dev/null
-swaybg -i "$WALLPAPER_DIR/$SELECTED" -m fill &
-systemctl --user restart waybar.service mako.service 2>/dev/null
+~/.local/bin/update-floorp-theme.sh 2>/dev/null
+~/.local/bin/create-gtk-theme.sh 2>/dev/null
+~/.local/bin/update-sddm-theme.sh 2>/dev/null
+~/.local/bin/update-wlogout-theme.sh 2>/dev/null
+killall mako 2>/dev/null
+sleep 0.3
+killall thunar 2>/dev/null &
+
+# Apply wallpaper with swww (consistent with QuickShell)
+swww img "$WALLPAPER_DIR/$SELECTED" --transition-type fade --transition-duration 2 --transition-fps 60
+
+# Restart mako
+systemctl --user start mako.service 2>/dev/null
+
+# Signal QuickShell bars to reload
+touch ~/.cache/wallpaper-changed
+
 notify-send "DONE" "Theme updated" -t 1500

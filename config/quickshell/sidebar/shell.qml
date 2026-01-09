@@ -402,25 +402,8 @@ ShellRoot {
             // Store the path for direct use in onExited
             pendingWallpaperPath = path
 
-            // FIXED: Run pywal FIRST, then other steps with ; for non-critical ones
-            // Also ensure signal file is created AFTER swww completes
-            var cmd = 'wal -i "' + path + '" -a 85 -q; '
-            cmd += Quickshell.env("HOME") + '/.local/bin/update-niri-colors.sh; '
-            cmd += Quickshell.env("HOME") + '/.local/bin/generate-qt-theme.sh; '
-            cmd += 'sleep 1; '
-            cmd += 'cp ~/.cache/wal/retro.rasi ~/.config/rofi/retro.rasi 2>/dev/null; '
-            cmd += 'cp ~/.cache/wal/mako-config ~/.config/mako/config 2>/dev/null; '
-            cmd += '~/.local/bin/update-floorp-theme.sh 2>/dev/null; '
-            cmd += '~/.local/bin/create-gtk-theme.sh 2>/dev/null; '
-            cmd += '~/.local/bin/update-sddm-theme.sh 2>/dev/null; '
-            cmd += '~/.local/bin/update-wlogout-theme.sh 2>/dev/null; '
-            cmd += 'killall mako 2>/dev/null; sleep 0.3; '
-            cmd += 'killall thunar 2>/dev/null & '
-            cmd += 'swww img "' + path + '" --transition-type fade --transition-duration 2 --transition-fps 60; '
-            cmd += 'systemctl --user start mako.service 2>/dev/null; '
-            // FIXED: Create signal file AFTER everything completes
-            cmd += 'touch ~/.cache/wallpaper-changed'
-
+            // Use the dedicated apply script
+            var cmd = Quickshell.env("HOME") + '/.local/bin/apply-wallpaper.sh "' + path + '"'
             applyProcess.command = ["bash", "-c", cmd]
             applyProcess.running = true
         }

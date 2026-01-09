@@ -99,7 +99,7 @@ ShellRoot {
             ColumnLayout {
                 anchors.centerIn: parent
                 spacing: 30
-                
+
                 Text {
                     Layout.alignment: Qt.AlignHCenter
                     text: ">> GENERATING FRACTAL <<"
@@ -108,38 +108,32 @@ ShellRoot {
                     font.pixelSize: 18
                     font.bold: true
                 }
-                
-                Rectangle {
+
+                Text {
+                    id: spinnerText
                     Layout.alignment: Qt.AlignHCenter
-                    width: 300
-                    height: 30
-                    color: colorDark
-                    border.color: colorAccent
-                    border.width: 2
-                    
-                    Rectangle {
-                        id: progressBar
-                        anchors.left: parent.left
-                        anchors.top: parent.top
-                        anchors.bottom: parent.bottom
-                        width: 0
-                        color: colorAccent
-                        
-                        NumberAnimation {
-                            id: progressAnim
-                            target: progressBar
-                            property: "width"
-                            from: 0
-                            to: 300
-                            duration: 30000  // 30 seconds
-                            running: false
+                    text: "⠋"
+                    color: colorAccent
+                    font.pixelSize: 48
+                    font.bold: true
+
+                    property int frame: 0
+                    property var frames: ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+
+                    Timer {
+                        interval: 100
+                        running: progressWindow.visible
+                        repeat: true
+                        onTriggered: {
+                            spinnerText.frame = (spinnerText.frame + 1) % spinnerText.frames.length
+                            spinnerText.text = spinnerText.frames[spinnerText.frame]
                         }
                     }
                 }
-                
+
                 Text {
                     Layout.alignment: Qt.AlignHCenter
-                    text: "This may take 10-30 seconds..."
+                    text: "This may take 1-2 minutes..."
                     color: colorFg
                     font.family: "monospace"
                     font.pixelSize: 12
@@ -318,16 +312,15 @@ ShellRoot {
         
         function generateRandomGradient() {
             console.log("Generating fractal flame...")
-            
+
             var homeDir = Quickshell.env("HOME")
-            
+
             // Hide the picker window
             wallpaperPicker.visible = false
-            
-            // Show progress window
+
+            // Show progress window with spinner
             progressWindow.visible = true
-            progressAnim.running = true
-            
+
             // Run flame generator script through bash
             flameProcess.command = ["bash", homeDir + "/.local/bin/generate-flame.sh"]
             flameProcess.running = true
@@ -335,30 +328,11 @@ ShellRoot {
         
         function selectWallpaper(path) {
             console.log("Selected wallpaper:", path)
-            
-            // Run completely detached in background
-            applyProcess.command = ["bash", "-c",
-                "nohup bash -c \"" +
-                "wal -i '" + path + "' -a 85 && " +
-                "sleep 2 && " +
-                "cp ~/.cache/wal/retro.rasi ~/.config/rofi/retro.rasi && " +
-                "cp ~/.cache/wal/mako-config ~/.config/mako/config && " +
-                "~/.local/bin/update-niri-colors.sh && " +
-                "~/.local/bin/update-floorp-theme.sh && " +
-                "~/.local/bin/create-gtk-theme.sh 2>/dev/null && " +
-                "~/.local/bin/update-sddm-theme.sh 2>/dev/null && " +
-                "killall mako 2>/dev/null ; sleep 0.5 && " +
-                "killall thunar 2>/dev/null & " +
-                "killall swaybg 2>/dev/null ; sleep 0.3 && " +
-                "swaybg -i '" + path + "' -m fill & " +
-                "sleep 0.3 && " +
-                "systemctl --user restart waybar.service && " +
-                "systemctl --user start mako.service && " +
-                "notify-send 'THEME UPDATED' 'System theme applied!' -t 2500" +
-                "\" > /dev/null 2>&1 &"
-            ]
+
+            // Use the dedicated apply script
+            applyProcess.command = ["bash", "-c", "~/.local/bin/apply-wallpaper.sh '" + path + "' &"]
             applyProcess.running = true
-            
+
             Qt.quit()
         }
     }
