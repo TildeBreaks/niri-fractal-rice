@@ -47,3 +47,29 @@ All in `~/.config/quickshell/`:
 - Edit live config, test, then copy to repo and commit
 - Quickshell auto-reloads on file save (usually)
 - Test with: `quickshell -c ~/.config/quickshell/sidebar`
+
+## IN PROGRESS: Notification Center
+Location: `~/.config/quickshell/notifications/shell.qml`
+
+**What's done:**
+- NotificationServer receiving D-Bus notifications
+- Popup notifications (centered, below topbar)
+- Notification center panel (centered, toggle via `~/.cache/notif-center-toggle`)
+- Quick settings grid (WiFi, Sound, Display, Power, Theme, Settings)
+- Notification history (up to 50)
+- Pywal theme integration
+
+**Still needed:**
+- Add notification button to topbar (`~/.config/quickshell/topbar/shell.qml`) that:
+  - Shows notification count badge
+  - Clicks to toggle notification center (touch `~/.cache/notif-center-toggle`)
+- Test thoroughly with mako stopped (`pkill mako`)
+- Once working, integrate into startup (replace mako)
+
+**To test:**
+```bash
+pkill mako
+quickshell -c ~/.config/quickshell/notifications &
+notify-send "Test" "Hello world"
+touch ~/.cache/notif-center-toggle  # toggle center
+```

@@ -1,10 +1,13 @@
 #!/bin/bash
 # Generate fractal flame with flam3
+# Usage: generate-flame.sh [palette_name]
+#   If palette_name is provided, use that palette instead of random
 
 WALLPAPER_DIR="$HOME/Pictures/wallpapers"
 TIMESTAMP=$(date +%s)
 OUTPUT="$WALLPAPER_DIR/flame-$TIMESTAMP.png"
 GENOME_FILE="/tmp/flam3-genome-$TIMESTAMP.flam3"
+PALETTE_NAME="${1:-}"
 
 echo "Generating random fractal flame genome..."
 
@@ -29,6 +32,12 @@ sed -i 's/supersample="[0-9]*"/supersample="2"/' "$GENOME_FILE"
 sed -i 's/quality="[0-9]*"/quality="3000"/' "$GENOME_FILE"
 sed -i 's/estimator_radius="[0-9]*"/estimator_radius="11"/' "$GENOME_FILE"
 
+# Apply custom palette if specified
+if [ -n "$PALETTE_NAME" ]; then
+    echo "Applying palette: $PALETTE_NAME"
+    ~/.local/bin/flam3-palette-util.sh apply "$PALETTE_NAME" "$GENOME_FILE"
+fi
+
 env out="$OUTPUT" format=png flam3-render < "$GENOME_FILE" 2>/dev/null
 
 if [ -f "$OUTPUT" ]; then
@@ -46,12 +55,17 @@ if [ -f "$OUTPUT" ]; then
     ~/.local/bin/create-gtk-theme.sh 2>/dev/null
     ~/.local/bin/update-sddm-theme.sh 2>/dev/null
     ~/.local/bin/update-wlogout-theme.sh 2>/dev/null
-    killall mako 2>/dev/null
-    sleep 0.3
+    # Restart notification daemon (supports both mako and swaync)
+    if pgrep -x swaync > /dev/null; then
+        swaync-client --reload-css 2>/dev/null
+    else
+        killall mako 2>/dev/null
+        sleep 0.3
+        systemctl --user start mako.service 2>/dev/null
+    fi
     killall thunar 2>/dev/null &
     # Use swww for wallpaper (consistent with manual selection)
     swww img "$OUTPUT" --transition-type fade --transition-duration 2 --transition-fps 60
-    systemctl --user start mako.service 2>/dev/null
     # Create signal file for QuickShell bars to detect
     touch ~/.cache/wallpaper-changed
     notify-send 'FRACTAL FLAME' 'New flame generated and applied!' -t 2000
