@@ -36,9 +36,18 @@ swww img "$LAST_WALLPAPER" --transition-type fade --transition-duration 1 --tran
 ~/.local/bin/generate-qt-theme.sh
 ~/.local/bin/update-niri-colors.sh
 cp ~/.cache/wal/retro.rasi ~/.config/rofi/retro.rasi 2>/dev/null
-cp ~/.cache/wal/mako-config ~/.config/mako/config 2>/dev/null
 ~/.local/bin/update-floorp-theme.sh 2>/dev/null
+~/.local/bin/update-zen-colors.sh 2>/dev/null
 ~/.local/bin/create-gtk-theme.sh 2>/dev/null
 ~/.local/bin/update-wlogout-theme.sh 2>/dev/null
+
+# Start color cycling daemon in background
+pkill -f "niri-color-cycle.sh" 2>/dev/null
+~/.local/bin/niri-color-cycle.sh &
+
+# Start quickshell notification center (replaces mako)
+pkill -f "mako" 2>/dev/null
+sleep 0.5
+quickshell -c ~/.config/quickshell/notifications &
 
 echo "✓ Theme loaded from cache!"

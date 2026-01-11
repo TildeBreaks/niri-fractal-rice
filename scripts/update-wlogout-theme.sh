@@ -32,9 +32,11 @@ button {
 }
 
 button:focus, button:active, button:hover {
-    background-color: ${color1};
-    border-color: ${color2};
+    background-color: ${color2};
+    border-color: ${foreground};
+    border-width: 4px;
     outline-style: none;
+    transform: scale(1.05);
 }
 
 #lock {

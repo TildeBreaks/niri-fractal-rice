@@ -152,16 +152,16 @@ ShellRoot {
         id: popupWindow
         visible: popupModel.count > 0
 
+        screen: Quickshell.screens[0]
+
         anchors {
             top: true
         }
 
         margins {
             top: 95
+            left: (Quickshell.screens[0].width - 400) / 2
         }
-
-        // Center horizontally
-        anchors.horizontalCenter: true
 
         implicitWidth: 400
         implicitHeight: Math.min(popupColumn.implicitHeight + 20, 600)
@@ -375,15 +375,14 @@ ShellRoot {
         anchors {
             top: true
             bottom: true
+            right: true
         }
 
         margins {
             top: 95
             bottom: 10
+            right: 10
         }
-
-        // Center horizontally
-        anchors.horizontalCenter: true
 
         implicitWidth: 420
         color: "transparent"
@@ -497,10 +496,10 @@ ShellRoot {
                         model: [
                             { name: "WiFi", icon: "📶", cmd: "kitty -e nmtui" },
                             { name: "Sound", icon: "🔊", cmd: "pavucontrol" },
-                            { name: "Display", icon: "🖥", cmd: "niri msg action do-screen-transition" },
-                            { name: "Power", icon: "⚡", cmd: "kitty -e btop" },
-                            { name: "Theme", icon: "🎨", cmd: "quickshell -c ~/.config/quickshell/wallpaper-picker.qml" },
-                            { name: "Settings", icon: "⚙", cmd: "gnome-control-center 2>/dev/null || systemsettings5 2>/dev/null || xfce4-settings-manager" }
+                            { name: "Display", icon: "🖥", cmd: "kitty -e nano ~/.config/niri/config.kdl" },
+                            { name: "Session", icon: "⏻", cmd: "wlogout" },
+                            { name: "Palette", icon: "🎨", cmd: "quickshell -c ~/.config/quickshell" },
+                            { name: "Keybinds", icon: "⌨", cmd: "kitty -e bash -c 'grep -A 200 \"^binds {\" ~/.config/niri/config.kdl | head -250 | less'" }
                         ]
 
                         Rectangle {
