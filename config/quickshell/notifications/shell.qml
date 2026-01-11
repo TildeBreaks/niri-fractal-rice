@@ -147,20 +147,19 @@ ShellRoot {
         id: popupModel
     }
 
-    // Notification popups - top center
+    // Notification popups - top right
     PanelWindow {
         id: popupWindow
         visible: popupModel.count > 0
 
-        screen: Quickshell.screens[0]
-
         anchors {
             top: true
+            right: true
         }
 
         margins {
             top: 95
-            left: (Quickshell.screens[0].width - 400) / 2
+            right: 10
         }
 
         implicitWidth: 400
