@@ -73,11 +73,38 @@ ShellRoot {
     Process {
         id: flameProcess
         running: false
-        
+
         onExited: {
             console.log("Flame process finished with code:", exitCode)
             progressWindow.visible = false
             Qt.quit()
+        }
+    }
+
+    // Load curated palettes for selection with color previews
+    ListModel {
+        id: paletteListModel
+    }
+
+    Process {
+        id: paletteLoader
+        command: ["bash", "-c", "/home/breaks/.local/bin/flam3-palette-util.sh curated-colors"]
+        running: true
+
+        stdout: SplitParser {
+            onRead: data => {
+                var line = data.trim()
+                if (line.length > 0) {
+                    var parts = line.split("|")
+                    var name = parts[0]
+                    var colorStr = parts.length > 1 ? parts[1] : ""
+                    paletteListModel.append({name: name, colorStr: colorStr})
+                }
+            }
+        }
+
+        onExited: {
+            console.log("Loaded", paletteListModel.count, "curated palettes with colors")
         }
     }
     
@@ -181,7 +208,7 @@ ShellRoot {
                             color: colorDark
                             border.color: colorAccent
                             border.width: 2
-                            
+
                             Text {
                                 anchors.centerIn: parent
                                 text: "[RND]"
@@ -189,30 +216,69 @@ ShellRoot {
                                 font.pixelSize: 14
                                 font.bold: true
                             }
-                            
+
                             MouseArea {
                                 anchors.fill: parent
                                 cursorShape: Qt.PointingHandCursor
                                 hoverEnabled: true
-                                
+
                                 onEntered: {
                                     parent.border.width = 3
                                     parent.color = colorAccent
                                     parent.children[0].color = colorBg
                                 }
-                                
+
                                 onExited: {
                                     parent.border.width = 2
                                     parent.color = colorDark
                                     parent.children[0].color = colorAccent
                                 }
-                                
+
                                 onClicked: {
                                     wallpaperPicker.generateRandomGradient()
                                 }
                             }
                         }
-                        
+
+                        // Palette picker button
+                        Rectangle {
+                            Layout.preferredWidth: 140
+                            Layout.preferredHeight: 40
+                            color: colorDark
+                            border.color: colorAccent
+                            border.width: 2
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: "[PALETTE]"
+                                color: colorAccent
+                                font.pixelSize: 14
+                                font.bold: true
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                hoverEnabled: true
+
+                                onEntered: {
+                                    parent.border.width = 3
+                                    parent.color = colorAccent
+                                    parent.children[0].color = colorBg
+                                }
+
+                                onExited: {
+                                    parent.border.width = 2
+                                    parent.color = colorDark
+                                    parent.children[0].color = colorAccent
+                                }
+
+                                onClicked: {
+                                    palettePopup.visible = !palettePopup.visible
+                                }
+                            }
+                        }
+
                         Text {
                             Layout.fillWidth: true
                             text: ">> SELECT WALLPAPER <<"
@@ -303,9 +369,106 @@ ShellRoot {
                         policy: ScrollBar.AsNeeded
                     }
                 }
+
+                // Palette selection popup
+                Rectangle {
+                    id: palettePopup
+                    visible: false
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 350
+                    color: colorBg
+                    border.color: colorAccent
+                    border.width: 2
+
+                    ColumnLayout {
+                        anchors.fill: parent
+                        anchors.margins: 10
+                        spacing: 5
+
+                        Text {
+                            text: ">> SELECT PALETTE <<"
+                            color: colorAccent
+                            font.family: "monospace"
+                            font.pixelSize: 14
+                            font.bold: true
+                            Layout.alignment: Qt.AlignHCenter
+                        }
+
+                        ListView {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            clip: true
+                            model: paletteListModel
+
+                            delegate: Rectangle {
+                                id: paletteDelegate
+                                width: ListView.view ? ListView.view.width : 200
+                                height: 40
+                                color: paletteMouseArea.containsMouse ? colorAccent : colorDark
+                                border.color: colorAccent
+                                border.width: 1
+
+                                property string paletteName: model.name
+                                property string paletteColors: model.colorStr || ""
+
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.margins: 5
+                                    spacing: 8
+
+                                    Text {
+                                        text: paletteDelegate.paletteName
+                                        color: paletteMouseArea.containsMouse ? colorBg : colorFg
+                                        font.family: "monospace"
+                                        font.pixelSize: 11
+                                        Layout.preferredWidth: 140
+                                        elide: Text.ElideRight
+                                    }
+
+                                    // Color swatches (centered)
+                                    Item {
+                                        Layout.fillWidth: true
+                                        height: 24
+
+                                        Row {
+                                            anchors.centerIn: parent
+                                            spacing: 2
+
+                                            Repeater {
+                                                model: paletteDelegate.paletteColors.length > 0 ? paletteDelegate.paletteColors.split(",") : []
+                                                Rectangle {
+                                                    width: 16
+                                                    height: 24
+                                                    color: modelData
+                                                    border.width: 1
+                                                    border.color: "#00000040"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                MouseArea {
+                                    id: paletteMouseArea
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+
+                                    onClicked: {
+                                        wallpaperPicker.generateWithPalette(paletteDelegate.paletteName)
+                                    }
+                                }
+                            }
+
+                            ScrollBar.vertical: ScrollBar {
+                                policy: ScrollBar.AsNeeded
+                            }
+                        }
+                    }
+                }
             }
         }
-        
+
         Component.onCompleted: {
             console.log("Wallpaper picker loaded with dynamic colors")
         }
@@ -334,6 +497,23 @@ ShellRoot {
             applyProcess.running = true
 
             Qt.quit()
+        }
+
+        function generateWithPalette(paletteName) {
+            console.log("Generating fractal flame with palette:", paletteName)
+
+            var homeDir = Quickshell.env("HOME")
+
+            // Hide the picker and popup
+            wallpaperPicker.visible = false
+            palettePopup.visible = false
+
+            // Show progress window with spinner
+            progressWindow.visible = true
+
+            // Run flame generator script with palette argument
+            flameProcess.command = ["bash", homeDir + "/.local/bin/generate-flame.sh", paletteName]
+            flameProcess.running = true
         }
     }
 }

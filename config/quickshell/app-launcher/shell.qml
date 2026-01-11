@@ -15,7 +15,71 @@ ShellRoot {
     property string color0: "#0A120B"
     property string color2: "#7FA87D"
     property string color8: "#778c76"
-    
+
+    // Recent apps tracking (stores desktop entry IDs)
+    property var recentAppIds: []
+    property int maxRecentApps: 5
+    property int recentUpdateCounter: 0  // Force reactivity
+    property string recentAppsFile: "/home/breaks/.config/quickshell/app-launcher/recent-apps.json"
+
+    // Load recent apps on startup
+    Process {
+        id: loadRecentApps
+        command: ["cat", recentAppsFile]
+        running: true
+
+        property string output: ""
+
+        stdout: SplitParser {
+            onRead: data => {
+                loadRecentApps.output += data
+            }
+        }
+
+        onExited: (exitCode, exitStatus) => {
+            if (exitCode === 0 && loadRecentApps.output.trim().length > 0) {
+                try {
+                    var parsed = JSON.parse(loadRecentApps.output.trim())
+                    if (Array.isArray(parsed)) {
+                        recentAppIds = parsed
+                        recentUpdateCounter++
+                    }
+                } catch (e) {
+                    recentAppIds = []
+                }
+            }
+        }
+    }
+
+    // Save recent apps helper
+    function saveRecentApps() {
+        var jsonData = JSON.stringify(recentAppIds)
+        saveRecentProcess.command = ["bash", "-c", "printf '%s' '" + jsonData + "' > " + recentAppsFile]
+        saveRecentProcess.running = true
+    }
+
+    Process {
+        id: saveRecentProcess
+        running: false
+    }
+
+    // Add app to recent list
+    function addToRecent(appId) {
+        if (!appId) return
+
+        // Remove if already exists
+        var newRecent = recentAppIds.filter(id => id !== appId)
+        // Add to front
+        newRecent.unshift(appId)
+        // Keep only max items
+        if (newRecent.length > maxRecentApps) {
+            newRecent = newRecent.slice(0, maxRecentApps)
+        }
+        recentAppIds = newRecent
+        recentUpdateCounter++
+        saveRecentApps()
+    }
+
     // Load colors on startup
     Process {
         id: colorLoaderProcess
@@ -68,9 +132,13 @@ ShellRoot {
         property string query: ""
 
         function launchSelected() {
-            if (list.currentItem && list.currentItem.modelData) {
-                list.currentItem.modelData.execute()
-                Qt.quit()
+            if (list.currentIndex >= 0 && list.currentIndex < filtered.values.length) {
+                var item = filtered.values[list.currentIndex]
+                if (!item.isSection && item.app) {
+                    addToRecent(item.app.id)
+                    item.app.execute()
+                    Qt.quit()
+                }
             }
         }
 
@@ -165,17 +233,17 @@ ShellRoot {
 
                         onTextChanged: {
                             launcher.query = text
-                            list.currentIndex = filtered.values.length > 0 ? 0 : -1
+                            list.moveToNextApp(0)
                         }
 
                         Keys.onEscapePressed: Qt.quit()
                         Keys.onPressed: event => {
                             if (event.key == Qt.Key_Up) {
                                 event.accepted = true
-                                if (list.currentIndex > 0) list.currentIndex--
+                                if (list.currentIndex > 0) list.moveToPrevApp(list.currentIndex - 1)
                             } else if (event.key == Qt.Key_Down) {
                                 event.accepted = true
-                                if (list.currentIndex < list.count - 1) list.currentIndex++
+                                if (list.currentIndex < list.count - 1) list.moveToNextApp(list.currentIndex + 1)
                             } else if ([Qt.Key_Return, Qt.Key_Enter].includes(event.key)) {
                                 event.accepted = true
                                 launcher.launchSelected()
@@ -186,29 +254,83 @@ ShellRoot {
 
                 // Count
                 Text {
-                    text: launcher.query.length > 0 ? "RESULTS (" + filtered.values.length + ")" : "ALL APPS (" + filtered.values.length + ")"
+                    text: {
+                        if (launcher.query.length > 0) {
+                            return "RESULTS (" + filtered.values.length + ")"
+                        } else {
+                            var recentCount = recentApps.values.length
+                            var allCount = allAppsFiltered.values.length
+                            if (recentCount > 0) {
+                                return "RECENT (" + recentCount + ") / ALL APPS (" + allCount + ")"
+                            }
+                            return "ALL APPS (" + allCount + ")"
+                        }
+                    }
                     color: color8
                     font.family: "Monospace"
                     font.pixelSize: 12
                     font.bold: true
                 }
 
-                // Filter
+                // Recent apps model
                 ScriptModel {
-                    id: filtered
+                    id: recentApps
                     values: {
+                        // Depend on counter to force reactivity
+                        var _ = recentUpdateCounter
+                        if (launcher.query.length > 0) return []
+                        const allEntries = [...DesktopEntries.applications.values]
+                        var recent = []
+                        for (var i = 0; i < recentAppIds.length; i++) {
+                            var app = allEntries.find(e => e.id === recentAppIds[i])
+                            if (app) recent.push(app)
+                        }
+                        return recent
+                    }
+                }
+
+                // All apps (excluding recent when no query)
+                ScriptModel {
+                    id: allAppsFiltered
+                    values: {
+                        // Depend on counter to force reactivity
+                        var _ = recentUpdateCounter
                         const allEntries = [...DesktopEntries.applications.values]
                         const q = launcher.query.trim().toLowerCase()
-                        
+
                         let results
                         if (q === "") {
-                            results = allEntries
+                            // Exclude recent apps from main list
+                            results = allEntries.filter(d => !recentAppIds.includes(d.id))
                         } else {
                             results = allEntries.filter(d => d.name && d.name.toLowerCase().includes(q))
                         }
-                        
-                        // Sort alphabetically
+
                         return results.sort((a, b) => a.name.localeCompare(b.name))
+                    }
+                }
+
+                // Combined filter with section markers
+                ScriptModel {
+                    id: filtered
+                    values: {
+                        var combined = []
+
+                        // Add recent section if not searching and have recent apps
+                        if (launcher.query.length === 0 && recentApps.values.length > 0) {
+                            combined.push({ isSection: true, sectionName: "RECENT" })
+                            for (var i = 0; i < recentApps.values.length; i++) {
+                                combined.push({ isSection: false, app: recentApps.values[i] })
+                            }
+                            combined.push({ isSection: true, sectionName: "ALL APPS" })
+                        }
+
+                        // Add all apps
+                        for (var j = 0; j < allAppsFiltered.values.length; j++) {
+                            combined.push({ isSection: false, app: allAppsFiltered.values[j] })
+                        }
+
+                        return combined
                     }
                 }
 
@@ -220,54 +342,103 @@ ShellRoot {
                     clip: true
                     spacing: 5
                     model: filtered.values
-                    currentIndex: filtered.values.length > 0 ? 0 : -1
                     highlightMoveDuration: 100
+
+                    // Find first non-section item for initial selection
+                    Component.onCompleted: moveToNextApp(0)
+
+                    function moveToNextApp(startIdx) {
+                        for (var i = startIdx; i < filtered.values.length; i++) {
+                            if (!filtered.values[i].isSection) {
+                                currentIndex = i
+                                return
+                            }
+                        }
+                        currentIndex = -1
+                    }
+
+                    function moveToPrevApp(startIdx) {
+                        for (var i = startIdx; i >= 0; i--) {
+                            if (!filtered.values[i].isSection) {
+                                currentIndex = i
+                                return
+                            }
+                        }
+                    }
 
                     ScrollBar.vertical: ScrollBar {
                         policy: ScrollBar.AsNeeded
                     }
 
-                    delegate: Rectangle {
+                    delegate: Item {
                         required property var modelData
                         required property int index
                         width: list.width - 20
-                        height: 45
-                        
-                        // Style based on selection
-                        color: ListView.isCurrentItem ? colorFg : (ma.containsMouse ? color2 : color0)
-                        border.width: ListView.isCurrentItem ? 3 : 2
-                        border.color: ListView.isCurrentItem ? colorFg : color2
+                        height: modelData.isSection ? 30 : 45
 
-                        MouseArea {
-                            id: ma
+                        // Section header
+                        Loader {
+                            active: modelData.isSection
                             anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: list.currentIndex = index
-                            onDoubleClicked: launcher.launchSelected()
+                            sourceComponent: Rectangle {
+                                color: "transparent"
+
+                                Text {
+                                    anchors.left: parent.left
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: "── " + modelData.sectionName + " ──"
+                                    color: color2
+                                    font.family: "Monospace"
+                                    font.pixelSize: 11
+                                    font.bold: true
+                                }
+                            }
                         }
 
-                        RowLayout {
+                        // App item
+                        Loader {
+                            active: !modelData.isSection
                             anchors.fill: parent
-                            anchors.margins: 8
-                            spacing: 10
+                            sourceComponent: Rectangle {
+                                property var app: modelData.app
+                                property bool isCurrent: index === list.currentIndex
 
-                            Text {
-                                text: "▶"
-                                color: parent.parent.ListView.isCurrentItem ? color0 : colorFg
-                                font.family: "Monospace"
-                                font.pixelSize: 16
-                                font.bold: true
-                            }
+                                color: isCurrent ? colorFg : (appMa.containsMouse ? color2 : color0)
+                                border.width: isCurrent ? 3 : 2
+                                border.color: isCurrent ? colorFg : color2
 
-                            Text {
-                                text: modelData.name
-                                color: parent.parent.ListView.isCurrentItem ? color0 : colorFg
-                                font.family: "Monospace"
-                                font.pixelSize: 14
-                                font.bold: true
-                                Layout.fillWidth: true
-                                elide: Text.ElideRight
+                                MouseArea {
+                                    id: appMa
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: list.currentIndex = index
+                                    onDoubleClicked: launcher.launchSelected()
+                                }
+
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.margins: 8
+                                    spacing: 10
+
+                                    Text {
+                                        text: "▶"
+                                        color: parent.parent.isCurrent ? color0 : colorFg
+                                        font.family: "Monospace"
+                                        font.pixelSize: 16
+                                        font.bold: true
+                                    }
+
+                                    Text {
+                                        text: app ? app.name : ""
+                                        color: parent.parent.isCurrent ? color0 : colorFg
+                                        font.family: "Monospace"
+                                        font.pixelSize: 14
+                                        font.bold: true
+                                        Layout.fillWidth: true
+                                        elide: Text.ElideRight
+                                    }
+                                }
                             }
                         }
                     }
