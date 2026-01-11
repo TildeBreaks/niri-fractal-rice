@@ -51,25 +51,39 @@ All in `~/.config/quickshell/`:
 ## IN PROGRESS: Notification Center
 Location: `~/.config/quickshell/notifications/shell.qml`
 
+**Current state - DO NOT replace mako yet, still testing**
+
 **What's done:**
 - NotificationServer receiving D-Bus notifications
-- Popup notifications (centered, below topbar)
-- Notification center panel (centered, toggle via `~/.cache/notif-center-toggle`)
-- Quick settings grid (WiFi, Sound, Display, Power, Theme, Settings)
+- Notification center panel (right side, toggle via `~/.cache/notif-center-toggle`)
+- Quick settings grid (WiFi, Sound work; others are placeholders)
 - Notification history (up to 50)
 - Pywal theme integration
 
-**Still needed:**
-- Add notification button to topbar (`~/.config/quickshell/topbar/shell.qml`) that:
-  - Shows notification count badge
-  - Clicks to toggle notification center (touch `~/.cache/notif-center-toggle`)
-- Test thoroughly with mako stopped (`pkill mako`)
-- Once working, integrate into startup (replace mako)
+**Issues to fix:**
+1. **Big gap** between topbar and notification center top - reduce margin
+2. **Popup notifications** should be CENTERED on screen, not right-aligned
+3. **Notification center panel** should stay on RIGHT (this is correct)
+4. **Display button** - placeholder, opens niri config in terminal (useless)
+5. **Keybind button** - placeholder, opens niri config in terminal (useless)
 
-**To test:**
+**Future features needed:**
+- Display settings GUI (quickshell window to modify monitor settings in niri config)
+- Keybind editor GUI (quickshell window to view/add/edit keybinds)
+- May need to modularize/source out niri config sections to make parsing easier
+- Add notification button to topbar with count badge
+
+**To test (keep mako running normally, only kill for testing):**
 ```bash
 pkill mako
 quickshell -c ~/.config/quickshell/notifications &
 notify-send "Test" "Hello world"
 touch ~/.cache/notif-center-toggle  # toggle center
+# When done testing, restart mako or just reboot
 ```
+
+## NEXT SESSION TODO:
+1. Fix notification popup centering (need FloatingWindow or different approach)
+2. Reduce gap between topbar and notification center (currently top: 95, try 50)
+3. Plan Display/Keybind settings GUI approach
+4. Consider splitting niri config into includable sections

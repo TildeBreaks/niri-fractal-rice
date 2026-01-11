@@ -45,9 +45,8 @@ cp ~/.cache/wal/retro.rasi ~/.config/rofi/retro.rasi 2>/dev/null
 pkill -f "niri-color-cycle.sh" 2>/dev/null
 ~/.local/bin/niri-color-cycle.sh &
 
-# Start quickshell notification center (replaces mako)
-pkill -f "mako" 2>/dev/null
-sleep 0.5
-quickshell -c ~/.config/quickshell/notifications &
+# Mako notifications (keep for now - quickshell notifications still in development)
+# TODO: Replace with quickshell notifications once ready
+# quickshell -c ~/.config/quickshell/notifications &
 
 echo "✓ Theme loaded from cache!"
