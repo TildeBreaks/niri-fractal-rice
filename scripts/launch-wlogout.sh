@@ -38,32 +38,32 @@ button:focus, button:active, button:hover {
 }
 
 #lock {
-    background-image: url("$HOME/.config/wlogout/icons/lock.png");
+    background-image: image(url("icons/lock.png"));
     border-color: ${color4};
 }
 
 #logout {
-    background-image: url("$HOME/.config/wlogout/icons/logout.png");
+    background-image: image(url("icons/logout.png"));
     border-color: ${color3};
 }
 
 #suspend {
-    background-image: url("$HOME/.config/wlogout/icons/suspend.png");
+    background-image: image(url("icons/suspend.png"));
     border-color: ${color5};
 }
 
 #hibernate {
-    background-image: url("$HOME/.config/wlogout/icons/hibernate.png");
+    background-image: image(url("icons/hibernate.png"));
     border-color: ${color6};
 }
 
 #shutdown {
-    background-image: url("$HOME/.config/wlogout/icons/shutdown.png");
+    background-image: image(url("icons/shutdown.png"));
     border-color: ${color1};
 }
 
 #reboot {
-    background-image: url("$HOME/.config/wlogout/icons/reboot.png");
+    background-image: image(url("icons/reboot.png"));
     border-color: ${color2};
 }
 EOF
