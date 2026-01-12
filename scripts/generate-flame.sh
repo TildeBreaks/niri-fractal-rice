@@ -25,12 +25,13 @@ echo "Rendering fractal flame at 3440x1440 (high quality)..."
 # Edit the genome for high quality output
 # - quality: iterations per pixel (higher = more detail, less noise)
 # - oversample: anti-aliasing factor (higher = smoother edges)
-# - scale: zoom level
+# - scale: zoom level (lower = zoomed out more, better framing)
+# - estimator_radius: affects density estimation quality
 sed -i 's/size="[0-9]* [0-9]*"/size="3440 1440"/' "$GENOME_FILE"
-sed -i 's/scale="[0-9.]*"/scale="500"/' "$GENOME_FILE"
-sed -i 's/supersample="[0-9]*"/supersample="2"/' "$GENOME_FILE"
-sed -i 's/quality="[0-9]*"/quality="3000"/' "$GENOME_FILE"
-sed -i 's/estimator_radius="[0-9]*"/estimator_radius="11"/' "$GENOME_FILE"
+sed -i 's/scale="[0-9.]*"/scale="280"/' "$GENOME_FILE"
+sed -i 's/supersample="[0-9]*"/supersample="3"/' "$GENOME_FILE"
+sed -i 's/quality="[0-9]*"/quality="6000"/' "$GENOME_FILE"
+sed -i 's/estimator_radius="[0-9]*"/estimator_radius="13"/' "$GENOME_FILE"
 
 # Apply custom palette if specified
 if [ -n "$PALETTE_NAME" ]; then
@@ -52,6 +53,7 @@ if [ -f "$OUTPUT" ]; then
     cp ~/.cache/wal/retro.rasi ~/.config/rofi/retro.rasi 2>/dev/null
     cp ~/.cache/wal/mako-config ~/.config/mako/config 2>/dev/null
     ~/.local/bin/update-floorp-theme.sh 2>/dev/null
+    ~/.local/bin/update-zen-colors.sh 2>/dev/null
     ~/.local/bin/create-gtk-theme.sh 2>/dev/null
     ~/.local/bin/update-sddm-theme.sh 2>/dev/null
     ~/.local/bin/update-wlogout-theme.sh 2>/dev/null
@@ -64,6 +66,9 @@ if [ -f "$OUTPUT" ]; then
         systemctl --user start mako.service 2>/dev/null
     fi
     killall thunar 2>/dev/null &
+    # Restart color cycling daemon with new colors
+    pkill -f "niri-color-cycle.sh" 2>/dev/null
+    ~/.local/bin/niri-color-cycle.sh &
     # Use swww for wallpaper (consistent with manual selection)
     swww img "$OUTPUT" --transition-type fade --transition-duration 2 --transition-fps 60
     # Create signal file for QuickShell bars to detect
