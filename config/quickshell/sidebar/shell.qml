@@ -526,7 +526,6 @@ ShellRoot {
                         
                         delegate: Rectangle {
                             width: wallpaperList.width - 10
-                            height: 120
                             color: delegateArea.containsMouse ? color2 : color1
                             border.width: delegateArea.containsMouse ? 2 : 1
                             border.color: colorFg

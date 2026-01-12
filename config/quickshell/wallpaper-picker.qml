@@ -429,8 +429,6 @@ ShellRoot {
                     }
                     
                     delegate: Rectangle {
-                        width: 260
-                        height: 260
                         color: colorBg
                         border.color: colorDark
                         border.width: 2
