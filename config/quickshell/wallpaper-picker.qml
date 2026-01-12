@@ -171,12 +171,15 @@ ShellRoot {
     
     PanelWindow {
         id: wallpaperPicker
-        
+
         implicitWidth: 1200
         implicitHeight: 800
         visible: true
-        
+
         color: "transparent"
+
+        // Tab state: 0=Flame, 1=Sheep, 2=Other
+        property int currentTab: 0
         
         Rectangle {
             anchors.fill: parent
@@ -203,7 +206,7 @@ ShellRoot {
                         
                         // Random gradient button
                         Rectangle {
-                            Layout.preferredWidth: 120
+                            Layout.preferredWidth: 110
                             Layout.preferredHeight: 40
                             color: colorDark
                             border.color: colorAccent
@@ -236,6 +239,45 @@ ShellRoot {
 
                                 onClicked: {
                                     wallpaperPicker.generateRandomGradient()
+                                }
+                            }
+                        }
+
+                        // Sheep button
+                        Rectangle {
+                            Layout.preferredWidth: 110
+                            Layout.preferredHeight: 40
+                            color: colorDark
+                            border.color: colorAccent
+                            border.width: 2
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: "[SHEEP]"
+                                color: colorAccent
+                                font.pixelSize: 14
+                                font.bold: true
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                hoverEnabled: true
+
+                                onEntered: {
+                                    parent.border.width = 3
+                                    parent.color = colorAccent
+                                    parent.children[0].color = colorBg
+                                }
+
+                                onExited: {
+                                    parent.border.width = 2
+                                    parent.color = colorDark
+                                    parent.children[0].color = colorAccent
+                                }
+
+                                onClicked: {
+                                    wallpaperPicker.generateSheep()
                                 }
                             }
                         }
@@ -312,7 +354,65 @@ ShellRoot {
                         }
                     }
                 }
-                
+
+                // Tab bar for filtering wallpapers
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 60
+                    color: "transparent"
+                    border.color: colorAccent
+                    border.width: 2
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.margins: 8
+                        spacing: 8
+
+                        Repeater {
+                            model: [
+                                { name: "FLAME", icon: "🔥", index: 0 },
+                                { name: "SHEEP", icon: "🐑", index: 1 },
+                                { name: "OTHER", icon: "📁", index: 2 }
+                            ]
+
+                            Rectangle {
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                color: wallpaperPicker.currentTab === modelData.index ? colorAccent : colorDark
+                                border.width: wallpaperPicker.currentTab === modelData.index ? 3 : 2
+                                border.color: colorAccent
+
+                                ColumnLayout {
+                                    anchors.centerIn: parent
+                                    spacing: 3
+
+                                    Text {
+                                        text: modelData.icon
+                                        font.pixelSize: 20
+                                        Layout.alignment: Qt.AlignHCenter
+                                    }
+
+                                    Text {
+                                        text: modelData.name
+                                        color: wallpaperPicker.currentTab === modelData.index ? colorBg : colorFg
+                                        font.family: "monospace"
+                                        font.pixelSize: 11
+                                        font.bold: true
+                                        Layout.alignment: Qt.AlignHCenter
+                                    }
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: wallpaperPicker.currentTab = modelData.index
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // Grid of wallpapers
                 GridView {
                     id: wallpaperGrid
@@ -334,7 +434,22 @@ ShellRoot {
                         color: colorBg
                         border.color: colorDark
                         border.width: 2
-                        
+
+                        // Filter based on current tab
+                        visible: {
+                            var fname = model.path.split("/").pop().toLowerCase()
+                            if (wallpaperPicker.currentTab === 0) {
+                                return fname.startsWith("flame-")
+                            } else if (wallpaperPicker.currentTab === 1) {
+                                return fname.startsWith("sheep-")
+                            } else {
+                                return !fname.startsWith("flame-") && !fname.startsWith("sheep-")
+                            }
+                        }
+
+                        width: visible ? 260 : 0
+                        height: visible ? 260 : 0
+
                         Image {
                             anchors.fill: parent
                             anchors.margins: 5
@@ -488,7 +603,23 @@ ShellRoot {
             flameProcess.command = ["bash", homeDir + "/.local/bin/generate-flame.sh"]
             flameProcess.running = true
         }
-        
+
+        function generateSheep() {
+            console.log("Generating electric sheep fractal...")
+
+            var homeDir = Quickshell.env("HOME")
+
+            // Hide the picker window
+            wallpaperPicker.visible = false
+
+            // Show progress window with spinner
+            progressWindow.visible = true
+
+            // Run sheep generator script through bash
+            flameProcess.command = ["bash", homeDir + "/.local/bin/generate-sheep.sh"]
+            flameProcess.running = true
+        }
+
         function selectWallpaper(path) {
             console.log("Selected wallpaper:", path)
 

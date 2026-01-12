@@ -192,6 +192,9 @@ ShellRoot {
         }
 
         implicitWidth: 450
+
+        // Tab state: 0=Flame, 1=Sheep, 2=Other
+        property int currentTab: 0
         
         Rectangle {
             anchors.fill: parent
@@ -222,7 +225,7 @@ ShellRoot {
                     }
 
                     Rectangle {
-                        Layout.preferredWidth: 70
+                        Layout.preferredWidth: 65
                         Layout.preferredHeight: 45
                         color: rndArea.pressed ? color3 : (rndArea.containsMouse ? color2 : color1)
                         border.width: 3
@@ -233,7 +236,7 @@ ShellRoot {
                             text: "RND"
                             color: colorFg
                             font.family: "Monospace"
-                            font.pixelSize: 16
+                            font.pixelSize: 14
                             font.bold: true
                             style: Text.Outline
                             styleColor: color2
@@ -249,7 +252,34 @@ ShellRoot {
                     }
 
                     Rectangle {
-                        Layout.preferredWidth: 70
+                        Layout.preferredWidth: 65
+                        Layout.preferredHeight: 45
+                        color: sheepArea.pressed ? color3 : (sheepArea.containsMouse ? color2 : color1)
+                        border.width: 3
+                        border.color: colorFg
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "SHP"
+                            color: colorFg
+                            font.family: "Monospace"
+                            font.pixelSize: 14
+                            font.bold: true
+                            style: Text.Outline
+                            styleColor: color2
+                        }
+
+                        MouseArea {
+                            id: sheepArea
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: wallpaperPopup.generateSheep()
+                        }
+                    }
+
+                    Rectangle {
+                        Layout.preferredWidth: 60
                         Layout.preferredHeight: 45
                         color: palArea.pressed ? color3 : (palArea.containsMouse ? color2 : color1)
                         border.width: paletteListVisible ? 3 : 2
@@ -409,11 +439,61 @@ ShellRoot {
                     Layout.preferredHeight: 2
                     color: colorFg
                 }
-                
+
+                // Tab bar for filtering wallpapers
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 5
+
+                    Repeater {
+                        model: [
+                            { name: "FLAME", icon: "🔥", index: 0 },
+                            { name: "SHEEP", icon: "🐑", index: 1 },
+                            { name: "OTHER", icon: "📁", index: 2 }
+                        ]
+
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 40
+                            color: wallpaperPopup.currentTab === modelData.index ? colorFg : (tabArea.containsMouse ? color2 : color1)
+                            border.width: wallpaperPopup.currentTab === modelData.index ? 3 : 2
+                            border.color: colorFg
+
+                            ColumnLayout {
+                                anchors.centerIn: parent
+                                spacing: 2
+
+                                Text {
+                                    text: modelData.icon
+                                    font.pixelSize: 14
+                                    Layout.alignment: Qt.AlignHCenter
+                                }
+
+                                Text {
+                                    text: modelData.name
+                                    color: wallpaperPopup.currentTab === modelData.index ? colorBg : (tabArea.containsMouse ? colorBg : colorFg)
+                                    font.family: "Monospace"
+                                    font.pixelSize: 9
+                                    font.bold: true
+                                    Layout.alignment: Qt.AlignHCenter
+                                }
+                            }
+
+                            MouseArea {
+                                id: tabArea
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: wallpaperPopup.currentTab = modelData.index
+                            }
+                        }
+                    }
+                }
+
                 Text {
                     id: statusText
                     Layout.fillWidth: true
-                    text: wallpaperModel.count + " wallpapers"
+                    text: wallpaperPopup.getFilteredCount() + " wallpapers"
                     color: colorFg
                     font.family: "Monospace"
                     opacity: 0.7
@@ -450,7 +530,21 @@ ShellRoot {
                             color: delegateArea.containsMouse ? color2 : color1
                             border.width: delegateArea.containsMouse ? 2 : 1
                             border.color: colorFg
-                            
+
+                            // Filter based on current tab
+                            visible: {
+                                var fname = model.fileName.toLowerCase()
+                                if (wallpaperPopup.currentTab === 0) {
+                                    return fname.startsWith("flame-")
+                                } else if (wallpaperPopup.currentTab === 1) {
+                                    return fname.startsWith("sheep-")
+                                } else {
+                                    return !fname.startsWith("flame-") && !fname.startsWith("sheep-")
+                                }
+                            }
+
+                            height: visible ? 120 : 0
+
                             Behavior on border.width {
                                 NumberAnimation { duration: 100 }
                             }
@@ -598,6 +692,16 @@ ShellRoot {
             genProcess.running = true
         }
 
+        function generateSheep() {
+            // Hide picker, show progress
+            wallpaperPopup.visible = false
+            progressWindow.visible = true
+
+            var homeDir = Quickshell.env("HOME")
+            genProcess.command = ["bash", homeDir + "/.local/bin/generate-sheep.sh"]
+            genProcess.running = true
+        }
+
         function generateWithPalette(paletteName) {
             // Hide picker, show progress
             wallpaperPopup.visible = false
@@ -606,6 +710,21 @@ ShellRoot {
             var homeDir = Quickshell.env("HOME")
             genProcess.command = ["bash", homeDir + "/.local/bin/generate-flame.sh", paletteName]
             genProcess.running = true
+        }
+
+        function getFilteredCount() {
+            var count = 0
+            for (var i = 0; i < wallpaperModel.count; i++) {
+                var fname = wallpaperModel.get(i, "fileName").toLowerCase()
+                if (currentTab === 0 && fname.startsWith("flame-")) {
+                    count++
+                } else if (currentTab === 1 && fname.startsWith("sheep-")) {
+                    count++
+                } else if (currentTab === 2 && !fname.startsWith("flame-") && !fname.startsWith("sheep-")) {
+                    count++
+                }
+            }
+            return count
         }
 
         Process {
