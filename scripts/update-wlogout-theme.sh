@@ -38,32 +38,32 @@ button:focus, button:active, button:hover {
 }
 
 #lock {
-    background-image: image(url("/usr/share/wlogout/icons/lock.png"), url("/usr/local/share/wlogout/icons/lock.png"));
+    background-image: url("$HOME/.config/wlogout/icons/lock.png");
     border-color: ${color4};
 }
 
 #logout {
-    background-image: image(url("/usr/share/wlogout/icons/logout.png"), url("/usr/local/share/wlogout/icons/logout.png"));
+    background-image: url("$HOME/.config/wlogout/icons/logout.png");
     border-color: ${color3};
 }
 
 #suspend {
-    background-image: image(url("/usr/share/wlogout/icons/suspend.png"), url("/usr/local/share/wlogout/icons/suspend.png"));
+    background-image: url("$HOME/.config/wlogout/icons/suspend.png");
     border-color: ${color5};
 }
 
 #hibernate {
-    background-image: image(url("/usr/share/wlogout/icons/hibernate.png"), url("/usr/local/share/wlogout/icons/hibernate.png"));
+    background-image: url("$HOME/.config/wlogout/icons/hibernate.png");
     border-color: ${color6};
 }
 
 #shutdown {
-    background-image: image(url("/usr/share/wlogout/icons/shutdown.png"), url("/usr/local/share/wlogout/icons/shutdown.png"));
+    background-image: url("$HOME/.config/wlogout/icons/shutdown.png");
     border-color: ${color1};
 }
 
 #reboot {
-    background-image: image(url("/usr/share/wlogout/icons/reboot.png"), url("/usr/local/share/wlogout/icons/reboot.png"));
+    background-image: url("$HOME/.config/wlogout/icons/reboot.png");
     border-color: ${color2};
 }
 EOF

@@ -86,7 +86,7 @@ BACKUP_DIR="$HOME/.config-backup-niri-$(date +%Y%m%d_%H%M%S)"
 echo ""
 echo "💾 Creating backup at $BACKUP_DIR"
 mkdir -p "$BACKUP_DIR"
-for dir in niri waybar quickshell kitty fastfetch fish mako rofi swaylock; do
+for dir in niri waybar quickshell kitty fastfetch fish mako rofi swaylock wlogout; do
     if [ -d ~/.config/$dir ]; then
         cp -r ~/.config/$dir "$BACKUP_DIR/" 2>/dev/null || true
     fi
@@ -120,6 +120,7 @@ if [ "$DISTRO" = "arch" ]; then
     UI_PKGS=(
         mako
         swayidle
+        wlogout
         swaylock-effects
         brightnessctl
         pamixer
