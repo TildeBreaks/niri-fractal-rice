@@ -3,9 +3,10 @@
 # Usage: generate-flame.sh [palette_name]
 #   If palette_name is provided, use that palette instead of random
 
-WALLPAPER_DIR="$HOME/Pictures/wallpapers"
+WALLPAPER_DIR="$HOME/Pictures/wallpapers/flame"
 TIMESTAMP=$(date +%s)
 OUTPUT="$WALLPAPER_DIR/flame-$TIMESTAMP.png"
+mkdir -p "$WALLPAPER_DIR"
 GENOME_FILE="/tmp/flam3-genome-$TIMESTAMP.flam3"
 PALETTE_NAME="${1:-}"
 

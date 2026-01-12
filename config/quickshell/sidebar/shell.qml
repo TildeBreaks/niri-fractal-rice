@@ -508,41 +508,50 @@ ShellRoot {
                     border.width: 2
                     border.color: colorFg
                     
+                    // Three separate folder models for each tab
+                    FolderListModel {
+                        id: flameModel
+                        folder: "file:///home/breaks/Pictures/wallpapers/flame"
+                        nameFilters: ["*.png", "*.jpg"]
+                        sortField: FolderListModel.Time
+                        sortReversed: true
+                        showDirs: false
+                    }
+
+                    FolderListModel {
+                        id: sheepModel
+                        folder: "file:///home/breaks/Pictures/wallpapers/sheep"
+                        nameFilters: ["*.png", "*.jpg"]
+                        sortField: FolderListModel.Time
+                        sortReversed: true
+                        showDirs: false
+                    }
+
+                    FolderListModel {
+                        id: otherModel
+                        folder: "file:///home/breaks/Pictures/wallpapers"
+                        nameFilters: ["*.png", "*.jpg"]
+                        sortField: FolderListModel.Time
+                        sortReversed: true
+                        showDirs: false
+                    }
+
                     ListView {
                         id: wallpaperList
                         anchors.fill: parent
                         anchors.margins: 8
                         spacing: 12
                         clip: true
-                        
-                        model: FolderListModel {
-                            id: wallpaperModel
-                            folder: "file:///home/breaks/Pictures/wallpapers"
-                            nameFilters: ["*.png", "*.jpg"]
-                            sortField: FolderListModel.Time
-                            sortReversed: true
-                            showDirs: false
-                        }
-                        
+
+                        // Switch model based on current tab
+                        model: wallpaperPopup.currentTab === 0 ? flameModel : (wallpaperPopup.currentTab === 1 ? sheepModel : otherModel)
+
                         delegate: Rectangle {
                             width: wallpaperList.width - 10
+                            height: 120
                             color: delegateArea.containsMouse ? color2 : color1
                             border.width: delegateArea.containsMouse ? 2 : 1
                             border.color: colorFg
-
-                            // Filter based on current tab
-                            visible: {
-                                var fname = model.fileName.toLowerCase()
-                                if (wallpaperPopup.currentTab === 0) {
-                                    return fname.startsWith("flame-")
-                                } else if (wallpaperPopup.currentTab === 1) {
-                                    return fname.startsWith("sheep-")
-                                } else {
-                                    return !fname.startsWith("flame-") && !fname.startsWith("sheep-")
-                                }
-                            }
-
-                            height: visible ? 120 : 0
 
                             Behavior on border.width {
                                 NumberAnimation { duration: 100 }
@@ -712,18 +721,9 @@ ShellRoot {
         }
 
         function getFilteredCount() {
-            var count = 0
-            for (var i = 0; i < wallpaperModel.count; i++) {
-                var fname = wallpaperModel.get(i, "fileName").toLowerCase()
-                if (currentTab === 0 && fname.startsWith("flame-")) {
-                    count++
-                } else if (currentTab === 1 && fname.startsWith("sheep-")) {
-                    count++
-                } else if (currentTab === 2 && !fname.startsWith("flame-") && !fname.startsWith("sheep-")) {
-                    count++
-                }
-            }
-            return count
+            if (currentTab === 0) return flameModel.count
+            if (currentTab === 1) return sheepModel.count
+            return otherModel.count
         }
 
         Process {

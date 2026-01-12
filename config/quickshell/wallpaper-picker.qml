@@ -6,6 +6,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
+import Qt.labs.folderlistmodel
 
 ShellRoot {
     // Read pywal colors - will update on load
@@ -50,24 +51,44 @@ ShellRoot {
         }
     }
     
-    Process {
-        id: findProcess
-        command: ["bash", "-c", "find ~/Pictures/wallpapers -maxdepth 1 -type f \\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' \\) 2>/dev/null"]
-        running: true
-        stdout: SplitParser {
-            onRead: data => {
-                var path = data.trim()
-                if (path.length > 0) {
-                    wallpaperModel.append({path: path})
-                }
-            }
-        }
+    // Three separate folder models for each tab
+    FolderListModel {
+        id: flameModel
+        folder: "file:///home/breaks/Pictures/wallpapers/flame"
+        nameFilters: ["*.png", "*.jpg", "*.jpeg"]
+        sortField: FolderListModel.Time
+        sortReversed: true
+        showDirs: false
+    }
+
+    FolderListModel {
+        id: sheepModel
+        folder: "file:///home/breaks/Pictures/wallpapers/sheep"
+        nameFilters: ["*.png", "*.jpg", "*.jpeg"]
+        sortField: FolderListModel.Time
+        sortReversed: true
+        showDirs: false
+    }
+
+    FolderListModel {
+        id: otherModel
+        folder: "file:///home/breaks/Pictures/wallpapers"
+        nameFilters: ["*.png", "*.jpg", "*.jpeg"]
+        sortField: FolderListModel.Time
+        sortReversed: true
+        showDirs: false
     }
     
     Process {
         id: applyProcess
         command: ["true"]
         running: false
+
+        onExited: (exitCode, exitStatus) => {
+            console.log("Apply process finished with code:", exitCode)
+            progressWindow.visible = false
+            Qt.quit()
+        }
     }
     
     Process {
@@ -418,62 +439,48 @@ ShellRoot {
                     id: wallpaperGrid
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    
+
                     cellWidth: 280
                     cellHeight: 280
-                    
+
                     clip: true
-                    
-                    model: ListModel {
-                        id: wallpaperModel
-                    }
-                    
+
+                    // Switch model based on current tab
+                    model: wallpaperPicker.currentTab === 0 ? flameModel : (wallpaperPicker.currentTab === 1 ? sheepModel : otherModel)
+
                     delegate: Rectangle {
+                        width: 260
+                        height: 260
                         color: colorBg
                         border.color: colorDark
                         border.width: 2
 
-                        // Filter based on current tab
-                        visible: {
-                            var fname = model.path.split("/").pop().toLowerCase()
-                            if (wallpaperPicker.currentTab === 0) {
-                                return fname.startsWith("flame-")
-                            } else if (wallpaperPicker.currentTab === 1) {
-                                return fname.startsWith("sheep-")
-                            } else {
-                                return !fname.startsWith("flame-") && !fname.startsWith("sheep-")
-                            }
-                        }
-
-                        width: visible ? 260 : 0
-                        height: visible ? 260 : 0
-
                         Image {
                             anchors.fill: parent
                             anchors.margins: 5
-                            source: "file://" + model.path
+                            source: "file://" + model.filePath
                             fillMode: Image.PreserveAspectCrop
                             cache: false
                             asynchronous: true
                         }
-                        
+
                         MouseArea {
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
-                            
+
                             onEntered: {
                                 parent.border.color = colorAccent
                                 parent.border.width = 3
                             }
-                            
+
                             onExited: {
                                 parent.border.color = colorDark
                                 parent.border.width = 2
                             }
-                            
+
                             onClicked: {
-                                wallpaperPicker.selectWallpaper(model.path)
+                                wallpaperPicker.selectWallpaper(model.filePath)
                             }
                         }
                     }
@@ -621,11 +628,13 @@ ShellRoot {
         function selectWallpaper(path) {
             console.log("Selected wallpaper:", path)
 
-            // Use the dedicated apply script
-            applyProcess.command = ["bash", "-c", "~/.local/bin/apply-wallpaper.sh '" + path + "' &"]
-            applyProcess.running = true
+            // Hide picker, show progress
+            wallpaperPicker.visible = false
+            progressWindow.visible = true
 
-            Qt.quit()
+            // Use the dedicated apply script (don't background it, wait for completion)
+            applyProcess.command = ["bash", "-c", Quickshell.env("HOME") + "/.local/bin/apply-wallpaper.sh '" + path + "'"]
+            applyProcess.running = true
         }
 
         function generateWithPalette(paletteName) {

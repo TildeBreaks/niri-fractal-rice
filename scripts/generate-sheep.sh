@@ -1,9 +1,10 @@
 #!/bin/bash
 # Generate Electric Sheep-style fractal (saves to wallpapers for manual selection)
 
-WALLPAPER_DIR="$HOME/Pictures/wallpapers"
+WALLPAPER_DIR="$HOME/Pictures/wallpapers/sheep"
 TIMESTAMP=$(date +%s)
 OUTPUT="$WALLPAPER_DIR/sheep-$TIMESTAMP.png"
+mkdir -p "$WALLPAPER_DIR"
 GENOME_FILE="/tmp/sheep-genome-$TIMESTAMP.flam3"
 
 echo "Generating Electric Sheep-style fractal..."
