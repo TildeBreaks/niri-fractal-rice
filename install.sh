@@ -54,10 +54,12 @@ echo "📋 UI Component Selection"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 echo "This setup uses Quickshell for all UI components:"
-echo "  • Topbar (status bar with system info)"
-echo "  • Sidebar (quick settings)"
+echo "  • Topbar (status bar with system info and audio switcher)"
+echo "  • Sidebar (quick settings and fractal wallpaper generator)"
+echo "  • Notifications Center (quick settings and palette creator)"
 echo "  • App Launcher (application menu)"
-echo "  • Wallpaper Picker"
+echo "  • Wallpaper Picker (with custom palette support)"
+echo "  • Palette Creator (design custom color palettes for fractals)"
 echo ""
 echo "Legacy alternatives are available:"
 echo "  • Waybar (alternative status bar)"
@@ -318,9 +320,15 @@ pip install --user pywal pillow numpy 2>/dev/null || pip3 install --user pywal p
 echo ""
 echo "📁 Creating directory structure..."
 mkdir -p ~/.config
+mkdir -p ~/.config/quickshell
 mkdir -p ~/.local/bin
 mkdir -p ~/Pictures/wallpapers
+mkdir -p ~/Pictures/wallpapers/flame
+mkdir -p ~/Pictures/wallpapers/sheep
 mkdir -p ~/.cache/wal
+
+# Create empty custom palettes file if it doesn't exist
+touch ~/.config/quickshell/custom-palettes.txt
 
 # Install configurations
 echo ""
@@ -412,6 +420,12 @@ echo "  • Generate fractal: ~/.local/bin/generate-flame.sh"
 echo "  • Toggle sidebar: Mod+D (or Super+D)"
 echo "  • Launch apps: Mod+R (or Super+R)"
 echo "  • Lock screen: Mod+Escape"
+echo ""
+echo "New features:"
+echo "  • Audio Switcher: Click [AUD] in topbar for output/input tabs"
+echo "  • Palette Creator: Open notification center → click Palette button"
+echo "  • Custom Palettes: Created palettes appear in wallpaper picker"
+echo "  • Fractal Generator: Use sidebar [WAL] button or palette selector"
 echo ""
 echo "Configuration files:"
 echo "  • Niri config: ~/.config/niri/config.kdl"
