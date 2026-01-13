@@ -147,32 +147,41 @@ ShellRoot {
         id: popupModel
     }
 
-    // Notification popups - top right
-    PanelWindow {
-        id: popupWindow
-        visible: popupModel.count > 0
+    // Notification popups - centered at top
+    Variants {
+        model: Quickshell.screens
 
-        anchors {
-            top: true
-            right: true
-        }
+        PanelWindow {
+            id: popupWindow
+            property var modelData
+            screen: modelData
+            visible: popupModel.count > 0
 
-        margins {
-            top: 95
-            right: 10
-        }
+            anchors {
+                top: true
+                left: true
+                right: true
+            }
 
-        implicitWidth: 400
-        implicitHeight: Math.min(popupColumn.implicitHeight + 20, 600)
+            margins {
+                top: 50
+                left: 0
+                right: 0
+            }
 
-        color: "transparent"
-        exclusionMode: ExclusionMode.Ignore
+            implicitHeight: popupModel.count > 0 ? Math.min(popupColumn.implicitHeight + 20, 500) : 0
 
-        ColumnLayout {
-            id: popupColumn
-            anchors.fill: parent
-            anchors.margins: 10
-            spacing: 10
+            color: "transparent"
+            exclusionMode: ExclusionMode.Ignore
+
+            // Center the notifications in this full-width panel
+            ColumnLayout {
+                id: popupColumn
+                width: 420
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.top: parent.top
+                anchors.margins: 10
+                spacing: 10
 
             Repeater {
                 model: popupModel
@@ -230,7 +239,7 @@ ShellRoot {
                                 text: notif ? notif.appName : ""
                                 color: color2
                                 font.family: "Monospace"
-                                font.pixelSize: 11
+                                font.pixelSize: 14
                                 font.bold: true
                                 Layout.fillWidth: true
                                 elide: Text.ElideRight
@@ -269,10 +278,12 @@ ShellRoot {
                             text: notif ? notif.summary : ""
                             color: colorFg
                             font.family: "Monospace"
-                            font.pixelSize: 13
+                            font.pixelSize: 16
                             font.bold: true
                             Layout.fillWidth: true
                             wrapMode: Text.WordWrap
+                            style: Text.Outline
+                            styleColor: color2
                         }
 
                         // Body
@@ -280,7 +291,7 @@ ShellRoot {
                             text: notif ? notif.body.replace(/<[^>]*>/g, '') : ""
                             color: colorFg
                             font.family: "Monospace"
-                            font.pixelSize: 11
+                            font.pixelSize: 13
                             opacity: 0.8
                             Layout.fillWidth: true
                             wrapMode: Text.WordWrap
@@ -340,6 +351,7 @@ ShellRoot {
                 }
             }
         }
+        }
     }
 
     // Notification Center Panel - toggled visibility
@@ -378,7 +390,7 @@ ShellRoot {
         }
 
         margins {
-            top: 95
+            top: 45
             bottom: 10
             right: 10
         }
@@ -439,8 +451,7 @@ ShellRoot {
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
                             onClicked: {
-                                notificationHistory = []
-                                notificationHistoryChanged()
+                                root.notificationHistory = []
                             }
                         }
                     }
@@ -495,10 +506,10 @@ ShellRoot {
                         model: [
                             { name: "WiFi", icon: "📶", cmd: "kitty -e nmtui" },
                             { name: "Sound", icon: "🔊", cmd: "pavucontrol" },
-                            { name: "Display", icon: "🖥", cmd: "kitty -e nano ~/.config/niri/config.kdl" },
-                            { name: "Session", icon: "⏻", cmd: "wlogout" },
+                            { name: "Display", icon: "🖥", cmd: "touch ~/.cache/display-settings-toggle" },
+                            { name: "Session", icon: "⏻", cmd: "touch ~/.cache/logout-menu-toggle" },
                             { name: "Palette", icon: "🎨", cmd: "quickshell -c ~/.config/quickshell" },
-                            { name: "Keybinds", icon: "⌨", cmd: "kitty -e bash -c 'grep -A 200 \"^binds {\" ~/.config/niri/config.kdl | head -250 | less'" }
+                            { name: "Keybinds", icon: "⌨", cmd: "touch ~/.cache/keybind-editor-toggle" }
                         ]
 
                         Rectangle {
@@ -603,23 +614,61 @@ ShellRoot {
 
                                 RowLayout {
                                     Layout.fillWidth: true
+                                    spacing: 8
 
                                     Text {
                                         text: modelData.appName
                                         color: color2
                                         font.family: "Monospace"
-                                        font.pixelSize: 10
+                                        font.pixelSize: 14
                                         font.bold: true
                                         Layout.fillWidth: true
                                         elide: Text.ElideRight
+                                        style: Text.Outline
+                                        styleColor: color1
                                     }
 
                                     Text {
                                         text: modelData.time
                                         color: colorFg
                                         font.family: "Monospace"
-                                        font.pixelSize: 9
+                                        font.pixelSize: 12
                                         opacity: 0.6
+                                    }
+
+                                    // Individual dismiss button
+                                    Rectangle {
+                                        Layout.preferredWidth: 28
+                                        Layout.preferredHeight: 28
+                                        color: historyCloseArea.containsMouse ? colorFg : color2
+                                        border.width: 2
+                                        border.color: colorFg
+                                        radius: 4
+
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: "✕"
+                                            color: historyCloseArea.containsMouse ? colorBg : colorFg
+                                            font.pixelSize: 16
+                                            font.bold: true
+                                        }
+
+                                        MouseArea {
+                                            id: historyCloseArea
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: {
+                                                // Create a new array without this item to trigger property change
+                                                var newHistory = []
+                                                for (var i = 0; i < root.notificationHistory.length; i++) {
+                                                    if (i !== index) {
+                                                        newHistory.push(root.notificationHistory[i])
+                                                    }
+                                                }
+                                                root.notificationHistory = newHistory
+                                            }
+                                        }
                                     }
                                 }
 
@@ -627,17 +676,19 @@ ShellRoot {
                                     text: modelData.summary
                                     color: colorFg
                                     font.family: "Monospace"
-                                    font.pixelSize: 11
+                                    font.pixelSize: 15
                                     font.bold: true
                                     Layout.fillWidth: true
                                     wrapMode: Text.WordWrap
+                                    style: Text.Outline
+                                    styleColor: color2
                                 }
 
                                 Text {
                                     text: modelData.body ? modelData.body.replace(/<[^>]*>/g, '') : ""
                                     color: colorFg
                                     font.family: "Monospace"
-                                    font.pixelSize: 10
+                                    font.pixelSize: 12
                                     opacity: 0.7
                                     Layout.fillWidth: true
                                     wrapMode: Text.WordWrap
@@ -651,6 +702,8 @@ ShellRoot {
                                 id: historyItemArea
                                 anchors.fill: parent
                                 hoverEnabled: true
+                                propagateComposedEvents: true
+                                acceptedButtons: Qt.NoButton
                             }
                         }
 

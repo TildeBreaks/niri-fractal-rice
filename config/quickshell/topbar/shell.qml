@@ -154,25 +154,27 @@ ShellRoot {
         }
     }
 
-    // Audio output switcher popup
+    // Audio output/input switcher popup
     PanelWindow {
         id: audioSwitcher
-        
+
         visible: false
         color: "transparent"
-        
+
+        property string activeTab: "output"
+
         anchors {
             top: true
             right: true
         }
-        
+
         margins {
             top: 50
             right: 20
         }
-        
+
         implicitWidth: 400
-        implicitHeight: Math.min(audioDeviceModel.count * 60 + 100, 500)
+        implicitHeight: 500
         
         Rectangle {
             anchors.fill: parent
@@ -186,12 +188,12 @@ ShellRoot {
                 anchors.fill: parent
                 anchors.margins: 15
                 spacing: 15
-                
+
                 RowLayout {
                     Layout.fillWidth: true
-                    
+
                     Text {
-                        text: ">> AUDIO OUTPUT <<"
+                        text: audioSwitcher.activeTab === "output" ? ">> AUDIO OUTPUT <<" : ">> AUDIO INPUT <<"
                         color: colorFg
                         font.family: "Monospace"
                         font.pixelSize: 16
@@ -200,27 +202,89 @@ ShellRoot {
                         style: Text.Outline
                         styleColor: color2
                     }
-                    
+
                     Rectangle {
                         Layout.preferredWidth: 40
                         Layout.preferredHeight: 40
                         color: closeArea.containsMouse ? color2 : color1
                         border.width: 2
                         border.color: color2
-                        
+
                         Text {
                             anchors.centerIn: parent
                             text: "✕"
                             color: colorFg
                             font.pixelSize: 20
                         }
-                        
+
                         MouseArea {
                             id: closeArea
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
                             onClicked: audioSwitcher.visible = false
+                        }
+                    }
+                }
+
+                // Tab buttons
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 10
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 40
+                        color: outputTabArea.containsMouse ? color2 : (audioSwitcher.activeTab === "output" ? color1 : color0)
+                        border.width: audioSwitcher.activeTab === "output" ? 3 : 2
+                        border.color: audioSwitcher.activeTab === "output" ? colorFg : color2
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "OUTPUT"
+                            color: colorFg
+                            font.family: "Monospace"
+                            font.pixelSize: 14
+                            font.bold: audioSwitcher.activeTab === "output"
+                        }
+
+                        MouseArea {
+                            id: outputTabArea
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                audioSwitcher.activeTab = "output"
+                                audioSwitcher.loadAudioDevices()
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 40
+                        color: inputTabArea.containsMouse ? color2 : (audioSwitcher.activeTab === "input" ? color1 : color0)
+                        border.width: audioSwitcher.activeTab === "input" ? 3 : 2
+                        border.color: audioSwitcher.activeTab === "input" ? colorFg : color2
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "INPUT"
+                            color: colorFg
+                            font.family: "Monospace"
+                            font.pixelSize: 14
+                            font.bold: audioSwitcher.activeTab === "input"
+                        }
+
+                        MouseArea {
+                            id: inputTabArea
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                audioSwitcher.activeTab = "input"
+                                audioSwitcher.loadAudioDevices()
+                            }
                         }
                     }
                 }
@@ -236,18 +300,16 @@ ShellRoot {
                     Layout.fillHeight: true
                     spacing: 8
                     clip: true
-                    
-                    model: ListModel {
-                        id: audioDeviceModel
-                    }
-                    
+
+                    model: audioSwitcher.activeTab === "output" ? audioDeviceModel : audioInputModel
+
                     delegate: Rectangle {
                         width: ListView.view.width
                         height: 50
                         color: deviceArea.containsMouse ? color2 : (model.isDefault ? color1 : color0)
                         border.width: model.isDefault ? 3 : 2
                         border.color: model.isDefault ? colorFg : color2
-                        
+
                         Text {
                             anchors.centerIn: parent
                             anchors.leftMargin: 15
@@ -259,13 +321,19 @@ ShellRoot {
                             elide: Text.ElideRight
                             width: parent.width - 30
                         }
-                        
+
                         MouseArea {
                             id: deviceArea
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: audioSwitcher.switchToDevice(model.sink)
+                            onClicked: {
+                                if (audioSwitcher.activeTab === "output") {
+                                    audioSwitcher.switchToDevice(model.sink)
+                                } else {
+                                    audioSwitcher.switchToInputDevice(model.source)
+                                }
+                            }
                         }
                     }
                 }
@@ -283,12 +351,22 @@ ShellRoot {
         }
         
         function loadAudioDevices() {
-            audioDeviceLoader.running = true
+            if (activeTab === "output") {
+                audioDeviceLoader.running = true
+            } else {
+                audioInputLoader.running = true
+            }
         }
-        
+
         function switchToDevice(sinkName) {
             audioSwitchProcess.command = ["pactl", "set-default-sink", sinkName]
             audioSwitchProcess.running = true
+            audioSwitcher.visible = false
+        }
+
+        function switchToInputDevice(sourceName) {
+            audioInputSwitchProcess.command = ["pactl", "set-default-source", sourceName]
+            audioInputSwitchProcess.running = true
             audioSwitcher.visible = false
         }
         
@@ -321,11 +399,462 @@ ShellRoot {
         Process {
             id: audioSwitchProcess
             running: false
-            
+
             onExited: (exitCode, exitStatus) => {
                 // Reload audio monitor
                 audioMonitor.volProcess.running = true
             }
+        }
+
+        // Input device model
+        ListModel {
+            id: audioInputModel
+        }
+
+        // Input device loader
+        Process {
+            id: audioInputLoader
+            command: ["bash", "-c", "default=$(pactl get-default-source); pactl list short sources | while read -r line; do source=$(echo \"$line\" | awk '{print $2}'); desc=$(pactl list sources | grep -A20 \"Name: $source\" | grep 'Description:' | cut -d: -f2 | xargs); isDefault='false'; if [ \"$source\" = \"$default\" ]; then isDefault='true'; fi; echo \"$source|$desc|$isDefault\"; done"]
+            running: false
+
+            stdout: SplitParser {
+                onRead: data => {
+                    var line = data.trim()
+                    if (line.length > 0) {
+                        var parts = line.split("|")
+                        if (parts.length === 3) {
+                            audioInputModel.append({
+                                source: parts[0],
+                                name: parts[1],
+                                isDefault: parts[2] === "true"
+                            })
+                        }
+                    }
+                }
+            }
+
+            onStarted: {
+                audioInputModel.clear()
+            }
+        }
+
+        // Input device switcher
+        Process {
+            id: audioInputSwitchProcess
+            running: false
+
+            onExited: (exitCode, exitStatus) => {
+                // Reload devices after switching
+                audioInputLoader.running = true
+            }
+        }
+
+        // Output device model
+        ListModel {
+            id: audioDeviceModel
+        }
+    }
+
+    // CPU Process Popup - shows top processes on hover
+    PanelWindow {
+        id: cpuPopup
+
+        visible: false
+        color: "transparent"
+
+        anchors {
+            top: true
+            right: true
+        }
+
+        margins {
+            top: 50
+            right: 300
+        }
+
+        implicitWidth: 350
+        implicitHeight: 280
+
+        Rectangle {
+            anchors.fill: parent
+            color: colorBg
+            opacity: 0.98
+            border.width: 3
+            border.color: color2
+
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.margins: 15
+                spacing: 10
+
+                Text {
+                    text: ">> TOP PROCESSES <<"
+                    color: colorFg
+                    font.family: "Monospace"
+                    font.pixelSize: 14
+                    font.bold: true
+                    style: Text.Outline
+                    styleColor: color2
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 2
+                    color: color2
+                }
+
+                Repeater {
+                    model: cpuProcessModel
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 28
+                        color: colorBg
+                        border.width: 1
+                        border.color: color1
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.margins: 5
+                            spacing: 10
+
+                            Text {
+                                text: model.cpu + "%"
+                                color: colorFg
+                                font.family: "Monospace"
+                                font.pixelSize: 12
+                                font.bold: true
+                                Layout.preferredWidth: 50
+                            }
+
+                            Text {
+                                text: model.name
+                                color: colorFg
+                                font.family: "Monospace"
+                                font.pixelSize: 12
+                                elide: Text.ElideRight
+                                Layout.fillWidth: true
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Hide when mouse leaves
+        Timer {
+            id: cpuPopupHideTimer
+            interval: 300
+            onTriggered: cpuPopup.visible = false
+        }
+    }
+
+    ListModel {
+        id: cpuProcessModel
+    }
+
+    // Calendar Popup - shows on clock hover
+    PanelWindow {
+        id: calendarPopup
+
+        visible: false
+        color: "transparent"
+
+        anchors {
+            top: true
+            left: true
+        }
+
+        margins {
+            top: 50
+            left: 10
+        }
+
+        implicitWidth: 280
+        implicitHeight: 240
+
+        Rectangle {
+            anchors.fill: parent
+            color: colorBg
+            opacity: 0.98
+            border.width: 3
+            border.color: color2
+
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.margins: 15
+                spacing: 10
+
+                Text {
+                    text: Qt.formatDate(new Date(), "dddd")
+                    color: colorFg
+                    font.family: "Monospace"
+                    font.pixelSize: 18
+                    font.bold: true
+                    Layout.alignment: Qt.AlignHCenter
+                    style: Text.Outline
+                    styleColor: color2
+                }
+
+                Text {
+                    text: Qt.formatDate(new Date(), "MMMM d, yyyy")
+                    color: colorFg
+                    font.family: "Monospace"
+                    font.pixelSize: 14
+                    Layout.alignment: Qt.AlignHCenter
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 2
+                    color: color2
+                }
+
+                // Simple month calendar grid
+                GridLayout {
+                    Layout.fillWidth: true
+                    columns: 7
+                    rowSpacing: 4
+                    columnSpacing: 4
+
+                    // Day headers
+                    Repeater {
+                        model: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"]
+                        Text {
+                            text: modelData
+                            color: color4
+                            font.family: "Monospace"
+                            font.pixelSize: 10
+                            font.bold: true
+                            horizontalAlignment: Text.AlignHCenter
+                            Layout.fillWidth: true
+                        }
+                    }
+
+                    // Calendar days
+                    Repeater {
+                        model: calendarDaysModel
+                        Rectangle {
+                            Layout.preferredWidth: 28
+                            Layout.preferredHeight: 24
+                            color: model.isToday ? color2 : (model.isCurrentMonth ? colorBg : color0)
+                            border.width: model.isToday ? 2 : 0
+                            border.color: colorFg
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: model.day
+                                color: model.isToday ? colorBg : (model.isCurrentMonth ? colorFg : color1)
+                                font.family: "Monospace"
+                                font.pixelSize: 10
+                                font.bold: model.isToday
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Timer {
+            id: calendarHideTimer
+            interval: 300
+            onTriggered: calendarPopup.visible = false
+        }
+    }
+
+    // Calendar model using ListModel for proper QML binding
+    ListModel {
+        id: calendarDaysModel
+    }
+
+    QtObject {
+        id: calendarModel
+
+        Component.onCompleted: generateCalendar()
+
+        function generateCalendar() {
+            calendarDaysModel.clear()
+            var now = new Date()
+            var year = now.getFullYear()
+            var month = now.getMonth()
+            var today = now.getDate()
+
+            // First day of month
+            var firstDay = new Date(year, month, 1)
+            var startDay = firstDay.getDay() // 0 = Sunday
+
+            // Days in month
+            var daysInMonth = new Date(year, month + 1, 0).getDate()
+
+            // Previous month days
+            var prevMonthDays = new Date(year, month, 0).getDate()
+
+            // Fill previous month
+            for (var i = startDay - 1; i >= 0; i--) {
+                calendarDaysModel.append({ day: prevMonthDays - i, isCurrentMonth: false, isToday: false })
+            }
+
+            // Current month
+            for (var d = 1; d <= daysInMonth; d++) {
+                calendarDaysModel.append({ day: d, isCurrentMonth: true, isToday: d === today })
+            }
+
+            // Next month to fill 6 rows
+            var remaining = 42 - calendarDaysModel.count
+            for (var n = 1; n <= remaining; n++) {
+                calendarDaysModel.append({ day: n, isCurrentMonth: false, isToday: false })
+            }
+        }
+    }
+
+    // Network Info Popup
+    PanelWindow {
+        id: networkPopup
+
+        visible: false
+        color: "transparent"
+
+        anchors {
+            top: true
+            right: true
+        }
+
+        margins {
+            top: 50
+            right: 200
+        }
+
+        implicitWidth: 300
+        implicitHeight: 150
+
+        Rectangle {
+            anchors.fill: parent
+            color: colorBg
+            opacity: 0.98
+            border.width: 3
+            border.color: color2
+
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.margins: 15
+                spacing: 10
+
+                Text {
+                    text: ">> NETWORK INFO <<"
+                    color: colorFg
+                    font.family: "Monospace"
+                    font.pixelSize: 14
+                    font.bold: true
+                    style: Text.Outline
+                    styleColor: color2
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 2
+                    color: color2
+                }
+
+                Text {
+                    text: "IP: " + networkInfoMonitor.ipAddress
+                    color: colorFg
+                    font.family: "Monospace"
+                    font.pixelSize: 12
+                }
+
+                Text {
+                    text: "Interface: " + networkInfoMonitor.iface
+                    color: colorFg
+                    font.family: "Monospace"
+                    font.pixelSize: 12
+                }
+
+                Text {
+                    text: "Gateway: " + networkInfoMonitor.gateway
+                    color: colorFg
+                    font.family: "Monospace"
+                    font.pixelSize: 12
+                }
+            }
+        }
+
+        Timer {
+            id: networkHideTimer
+            interval: 300
+            onTriggered: networkPopup.visible = false
+        }
+    }
+
+    // Network Info Monitor
+    QtObject {
+        id: networkInfoMonitor
+        property string ipAddress: "..."
+        property string iface: "..."
+        property string gateway: "..."
+
+        property var process: Process {
+            command: ["bash", "-c", "ip -4 addr show | grep -oP 'inet \\K[\\d.]+' | grep -v '127.0.0.1' | head -1; ip route | grep default | awk '{print $5}'; ip route | grep default | awk '{print $3}'"]
+            running: false
+
+            property var lines: []
+
+            stdout: SplitParser {
+                onRead: data => {
+                    networkInfoMonitor.process.lines.push(data.trim())
+                }
+            }
+
+            onExited: (exitCode, exitStatus) => {
+                if (networkInfoMonitor.process.lines.length >= 1) {
+                    networkInfoMonitor.ipAddress = networkInfoMonitor.process.lines[0] || "N/A"
+                }
+                if (networkInfoMonitor.process.lines.length >= 2) {
+                    networkInfoMonitor.iface = networkInfoMonitor.process.lines[1] || "N/A"
+                }
+                if (networkInfoMonitor.process.lines.length >= 3) {
+                    networkInfoMonitor.gateway = networkInfoMonitor.process.lines[2] || "N/A"
+                }
+                networkInfoMonitor.process.lines = []
+            }
+        }
+
+        property var timer: Timer {
+            interval: 10000
+            running: true
+            repeat: true
+            triggeredOnStart: true
+            onTriggered: networkInfoMonitor.process.running = true
+        }
+    }
+
+    // CPU Process Monitor
+    QtObject {
+        id: cpuProcessMonitor
+
+        property var process: Process {
+            command: ["bash", "-c", "ps aux --sort=-%cpu | head -8 | tail -7 | awk '{printf \"%.1f|%s\\n\", $3, $11}'"]
+            running: false
+
+            stdout: SplitParser {
+                onRead: data => {
+                    var parts = data.trim().split("|")
+                    if (parts.length === 2) {
+                        var name = parts[1].split("/").pop()
+                        if (name.length > 25) name = name.substring(0, 22) + "..."
+                        cpuProcessModel.append({ cpu: parts[0], name: name })
+                    }
+                }
+            }
+
+            onStarted: cpuProcessModel.clear()
+        }
+
+        property var timer: Timer {
+            interval: 2000
+            running: true
+            repeat: true
+            triggeredOnStart: true
+            onTriggered: cpuProcessMonitor.process.running = true
         }
     }
 
@@ -337,27 +866,27 @@ ShellRoot {
         PanelWindow {
             required property var modelData
             screen: modelData
-            
+
             id: topbar
-            
+
             // Per-screen workspace model
             property var workspaceModel: ListModel {}
             property string screenName: modelData.name
             property bool isPrimary: modelData.primary !== undefined ? modelData.primary : (modelData.name === "DP-1")
             property string windowTitle: "Desktop"
-            
+
             anchors {
                 top: true
                 left: true
                 right: true
             }
-            
+
             margins {
                 top: 0
                 left: 0
                 right: 0
             }
-            
+
             implicitHeight: 41
             color: "transparent"
         
@@ -488,19 +1017,47 @@ ShellRoot {
                 anchors.margins: 4
                 spacing: 8
                 
-                // LEFT: Clock + Workspaces
+                // LEFT: Sidebar toggle + Clock + Workspaces
                 RowLayout {
                     Layout.fillHeight: true
                     spacing: 8
-                    
-                    // Clock
+
+                    // Sidebar toggle button
+                    Rectangle {
+                        Layout.preferredHeight: 30
+                        Layout.preferredWidth: 36
+                        color: sidebarToggleArea.containsMouse ? color0 : colorBg
+                        border.width: 2
+                        border.color: color2
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "☰"
+                            color: colorFg
+                            font.pixelSize: 18
+                            font.bold: true
+                        }
+
+                        MouseArea {
+                            id: sidebarToggleArea
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                // Toggle sidebar via signal file
+                                sidebarToggleProcess.running = true
+                            }
+                        }
+                    }
+
+                    // Clock with calendar hover
                     Rectangle {
                         Layout.preferredHeight: 30
                         Layout.preferredWidth: clockText.width + 32
-                        color: colorBg
-                        border.width: 3
-                        border.color: color2
-                        
+                        color: clockArea.containsMouse ? color0 : colorBg
+                        border.width: calendarPopup.visible ? 3 : 2
+                        border.color: calendarPopup.visible ? colorFg : color2
+
                         Text {
                             id: clockText
                             anchors.centerIn: parent
@@ -512,13 +1069,25 @@ ShellRoot {
                             style: Text.Outline
                             styleColor: color2
                         }
-                        
+
                         MouseArea {
+                            id: clockArea
                             anchors.fill: parent
+                            hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
+
+                            onEntered: {
+                                calendarHideTimer.stop()
+                                calendarPopup.visible = true
+                            }
+
+                            onExited: {
+                                calendarHideTimer.restart()
+                            }
+
                             onClicked: {
                                 clockTimer.showDate = !clockTimer.showDate
-                                clockText.text = clockTimer.showDate ? 
+                                clockText.text = clockTimer.showDate ?
                                     "[ " + Qt.formatDate(clockTimer.currentTime, "yyyy-MM-dd") + " ]" :
                                     "[ " + Qt.formatTime(clockTimer.currentTime, "HH:mm:ss") + " ]"
                             }
@@ -667,14 +1236,14 @@ ShellRoot {
                         }
                     }
                     
-                    // Network
+                    // Network with hover info popup
                     Rectangle {
                         Layout.preferredWidth: netText.width + 24
                         Layout.preferredHeight: 30
-                        color: colorBg
-                        border.width: 2
-                        border.color: color2
-                        
+                        color: netArea.containsMouse ? color0 : colorBg
+                        border.width: networkPopup.visible ? 3 : 2
+                        border.color: networkPopup.visible ? colorFg : color2
+
                         Text {
                             id: netText
                             anchors.centerIn: parent
@@ -686,16 +1255,37 @@ ShellRoot {
                             style: Text.Outline
                             styleColor: color2
                         }
+
+                        MouseArea {
+                            id: netArea
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+
+                            onEntered: {
+                                networkHideTimer.stop()
+                                networkPopup.visible = true
+                            }
+
+                            onExited: {
+                                networkHideTimer.restart()
+                            }
+
+                            onClicked: {
+                                // Open network manager
+                                nmLauncher.running = true
+                            }
+                        }
                     }
                     
-                    // CPU
+                    // CPU with process popup on hover
                     Rectangle {
                         Layout.preferredWidth: cpuText.width + 24
                         Layout.preferredHeight: 30
                         color: cpuArea.containsMouse ? color0 : colorBg
-                        border.width: 2
-                        border.color: color2
-                        
+                        border.width: cpuPopup.visible ? 3 : 2
+                        border.color: cpuPopup.visible ? colorFg : color2
+
                         Text {
                             id: cpuText
                             anchors.centerIn: parent
@@ -707,24 +1297,34 @@ ShellRoot {
                             style: Text.Outline
                             styleColor: color2
                         }
-                        
+
                         MouseArea {
                             id: cpuArea
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
+
+                            onEntered: {
+                                cpuPopupHideTimer.stop()
+                                cpuPopup.visible = true
+                            }
+
+                            onExited: {
+                                cpuPopupHideTimer.restart()
+                            }
+
                             onClicked: btopLauncher.running = true
                         }
                     }
                     
-                    // Memory
+                    // Memory (hover glow only)
                     Rectangle {
                         Layout.preferredWidth: memText.width + 24
                         Layout.preferredHeight: 30
                         color: memArea.containsMouse ? color0 : colorBg
-                        border.width: 2
-                        border.color: color2
-                        
+                        border.width: memArea.containsMouse ? 3 : 2
+                        border.color: memArea.containsMouse ? colorFg : color2
+
                         Text {
                             id: memText
                             anchors.centerIn: parent
@@ -736,24 +1336,22 @@ ShellRoot {
                             style: Text.Outline
                             styleColor: color2
                         }
-                        
+
                         MouseArea {
                             id: memArea
                             anchors.fill: parent
                             hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: btopLauncher.running = true
                         }
                     }
                     
-                    // Temperature
+                    // Temperature (hover glow only)
                     Rectangle {
                         Layout.preferredWidth: tempText.width + 24
                         Layout.preferredHeight: 30
                         color: tempArea.containsMouse ? color0 : colorBg
-                        border.width: 2
-                        border.color: tempMonitor.critical ? color1 : color2
-                        
+                        border.width: tempArea.containsMouse ? 3 : 2
+                        border.color: tempMonitor.critical ? color1 : (tempArea.containsMouse ? colorFg : color2)
+
                         // Glow effect
                         Rectangle {
                             anchors.fill: parent
@@ -764,7 +1362,7 @@ ShellRoot {
                             opacity: 0.3
                             z: -1
                         }
-                        
+
                         Text {
                             id: tempText
                             anchors.centerIn: parent
@@ -776,20 +1374,18 @@ ShellRoot {
                             style: Text.Outline
                             styleColor: tempMonitor.critical ? color1 : color2
                         }
-                        
+
                         SequentialAnimation on opacity {
                             running: tempMonitor.critical
                             loops: Animation.Infinite
                             NumberAnimation { to: 0.5; duration: 500 }
                             NumberAnimation { to: 1.0; duration: 500 }
                         }
-                        
+
                         MouseArea {
                             id: tempArea
                             anchors.fill: parent
                             hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: btopLauncher.running = true
                         }
                     }
                     
@@ -1351,6 +1947,12 @@ ShellRoot {
         command: ["kitty", "-e", "btop"]
         running: false
     }
+
+    Process {
+        id: nmLauncher
+        command: ["nm-connection-editor"]
+        running: false
+    }
     
     Process {
         id: volumeToggle
@@ -1387,5 +1989,12 @@ ShellRoot {
         onExited: (exitCode, exitStatus) => {
             caffeineMonitor.process.running = true
         }
+    }
+
+    // Sidebar toggle via signal file
+    Process {
+        id: sidebarToggleProcess
+        command: ["bash", "-c", "touch ~/.cache/sidebar-toggle"]
+        running: false
     }
 }

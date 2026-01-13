@@ -228,10 +228,16 @@ get_palette_colors() {
 
 # Output curated palettes with color previews
 curated_with_colors() {
+    # First output built-in curated palettes
     while IFS= read -r name; do
         local colors=$(get_palette_colors "$name")
         echo "$name|$colors"
     done < <(curated_palettes)
+
+    # Then append custom palettes from file
+    if [ -f ~/.config/quickshell/custom-palettes.txt ]; then
+        cat ~/.config/quickshell/custom-palettes.txt
+    fi
 }
 
 case "$1" in
