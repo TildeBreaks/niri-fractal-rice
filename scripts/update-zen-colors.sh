@@ -1,10 +1,11 @@
 #!/bin/bash
 # Update Zen Browser theme with pywal colors
+# Robust version with better profile detection
 
 COLORS_JSON="$HOME/.cache/wal/colors.json"
 
 if [ ! -f "$COLORS_JSON" ]; then
-    echo "Pywal colors not found"
+    echo "Pywal colors not found. Run pywal first."
     exit 1
 fi
 
@@ -20,11 +21,30 @@ COLOR5=$(jq -r '.colors.color5' "$COLORS_JSON")
 COLOR6=$(jq -r '.colors.color6' "$COLORS_JSON")
 COLOR7=$(jq -r '.colors.color7' "$COLORS_JSON")
 
-# Find Zen profile directory - look for any .Default folder
-ZEN_PROFILE=$(find "$HOME/.zen" -maxdepth 1 -type d -name "*.Default*" 2>/dev/null | head -1)
+# Potential Zen profile locations
+SEARCH_PATHS=(
+    "$HOME/.zen"
+    "$HOME/.mozilla/zen"
+)
+
+ZEN_PROFILE=""
+
+for path in "${SEARCH_PATHS[@]}"; do
+    if [ -d "$path" ]; then
+        # Search case-insensitively for a profile containing 'default'
+        # head -1 picks the first one found
+        PROFILE_DIR=$(find "$path" -maxdepth 1 -type d -iname "*default*" 2>/dev/null | head -1)
+        if [ -n "$PROFILE_DIR" ]; then
+            ZEN_PROFILE="$PROFILE_DIR"
+            echo "✓ Found Zen profile at: $ZEN_PROFILE"
+            break
+        fi
+    fi
+done
 
 if [ -z "$ZEN_PROFILE" ]; then
-    echo "⚠ Zen Browser profile not found"
+    echo "⚠ Zen Browser profile not found. Please ensure Zen has been run at least once."
+    echo "Checked: ${SEARCH_PATHS[*]}"
     exit 1
 fi
 
@@ -65,11 +85,6 @@ cat > "$CHROME_DIR/userChrome.css" << EOF
 /* Tab bar / toolbar area */
 #titlebar, #TabsToolbar, #navigator-toolbox {
     background-color: ${COLOR_BG} !important;
-    background: ${COLOR_BG} !important;
-}
-
-#TabsToolbar-customization-target {
-    background-color: ${COLOR_BG} !important;
 }
 
 /* Zen sidebar */
@@ -86,11 +101,9 @@ cat > "$CHROME_DIR/userChrome.css" << EOF
 /* Zen gradient bar / accent strip */
 .zen-sidebar-gradient,
 #zen-sidebar-gradient,
-[class*="gradient"],
 .zen-essentials-gradient,
 #zen-essentials-gradient {
     background: linear-gradient(180deg, ${COLOR2}, ${COLOR4}) !important;
-    background-image: linear-gradient(180deg, ${COLOR2}, ${COLOR4}) !important;
 }
 
 /* Override any purple gradients */
@@ -98,230 +111,69 @@ cat > "$CHROME_DIR/userChrome.css" << EOF
     background: ${COLOR_BG} !important;
 }
 
-/* Zen accent bar */
-.zen-sidebar-panel-wrapper::before,
-#zen-sidebar-panels-wrapper::before,
-#zen-sidebar-panels-wrapper {
-    background: ${COLOR_BG} !important;
-    border-color: ${COLOR1} !important;
-}
-
 /* Zen primary gradient variable overrides */
 :root {
     --zen-appcontent-separator-color: ${COLOR1} !important;
     --zen-themed-toolbar-bg: ${COLOR_BG} !important;
-    --zen-dialog-background: ${COLOR_BG} !important;
     --zen-sidebar-gradient: linear-gradient(180deg, ${COLOR2}, ${COLOR4}) !important;
     --gradient: linear-gradient(180deg, ${COLOR2}, ${COLOR4}) !important;
     --zen-main-browser-background: ${COLOR_BG} !important;
 }
 
 /* Zen workspaces */
-.zen-workspace-button {
-    background-color: ${COLOR_BG} !important;
-}
-
-.zen-workspace-button:hover {
-    background-color: ${COLOR2} !important;
-}
-
 .zen-workspace-button[selected="true"] {
     background-color: ${COLOR4} !important;
 }
 
-/* Toolbar */
-#nav-bar {
-    background-color: var(--zen-bg) !important;
-    border-color: var(--zen-border) !important;
-}
-
-/* Tabs */
-.tabbrowser-tab {
-    background-color: var(--zen-dark) !important;
-    color: var(--zen-fg) !important;
-}
-
-.tabbrowser-tab[selected="true"] {
-    background-color: var(--zen-accent) !important;
-    color: var(--zen-fg) !important;
-}
-
-.tabbrowser-tab:hover:not([selected="true"]) {
-    background-color: var(--zen-secondary) !important;
-}
-
 /* URL bar */
 #urlbar {
-    background-color: var(--zen-dark) !important;
-    color: var(--zen-fg) !important;
-    border: 1px solid var(--zen-border) !important;
-}
-
-#urlbar:focus-within {
-    border-color: var(--zen-accent) !important;
-}
-
-#urlbar-input {
-    color: var(--zen-fg) !important;
-}
-
-/* Sidebar */
-#sidebar-box {
-    background-color: var(--zen-bg) !important;
-    border-color: var(--zen-border) !important;
-}
-
-#sidebar {
-    background-color: var(--zen-bg) !important;
+    background-color: ${COLOR0} !important;
+    color: ${COLOR_FG} !important;
+    border: 1px solid ${COLOR1} !important;
 }
 
 /* Context menus */
 menupopup {
-    background-color: var(--zen-bg) !important;
-    color: var(--zen-fg) !important;
-    border: 1px solid var(--zen-border) !important;
-}
-
-menuitem {
-    color: var(--zen-fg) !important;
-}
-
-menuitem:hover {
-    background-color: var(--zen-hover) !important;
-    color: var(--zen-fg) !important;
-}
-
-menu:hover {
-    background-color: var(--zen-hover) !important;
-}
-
-/* Bookmarks bar */
-#PersonalToolbar {
-    background-color: var(--zen-bg) !important;
-}
-
-/* Panels and popups */
-panel, .panel-arrowcontent {
-    background-color: var(--zen-bg) !important;
-    color: var(--zen-fg) !important;
-    border-color: var(--zen-border) !important;
-}
-
-/* Findbar */
-findbar {
-    background-color: var(--zen-bg) !important;
-    color: var(--zen-fg) !important;
-}
-
-/* Autocomplete popup */
-#PopupAutoComplete {
-    background-color: var(--zen-bg) !important;
-    color: var(--zen-fg) !important;
-}
-
-.autocomplete-richlistitem {
-    background-color: var(--zen-bg) !important;
-    color: var(--zen-fg) !important;
-}
-
-.autocomplete-richlistitem:hover {
-    background-color: var(--zen-accent) !important;
-}
-
-/* Buttons */
-button {
-    background-color: var(--zen-secondary) !important;
-    color: var(--zen-fg) !important;
-}
-
-button:hover {
-    background-color: var(--zen-accent) !important;
+    background-color: ${COLOR_BG} !important;
+    color: ${COLOR_FG} !important;
+    border: 1px solid ${COLOR1} !important;
 }
 
 /* Scrollbars */
 scrollbar {
-    background-color: var(--zen-bg) !important;
+    background-color: ${COLOR_BG} !important;
 }
 
 scrollbar thumb {
-    background-color: var(--zen-border) !important;
+    background-color: ${COLOR1} !important;
 }
 
-scrollbar thumb:hover {
-    background-color: var(--zen-accent) !important;
+/* Fullscreen handling */
+:root[inFullscreen] #navigator-toolbox,
+:root[inFullscreen] #titlebar {
+    display: none !important;
 }
 EOF
 
 # Create userContent.css for internal pages
 cat > "$CHROME_DIR/userContent.css" << EOF
 /* Zen Browser - Pywal Dynamic Content Theme */
-/* Auto-generated - DO NOT EDIT MANUALLY */
-
-:root {
-    --zen-bg: ${COLOR_BG};
-    --zen-fg: ${COLOR_FG};
-    --zen-accent: ${COLOR4};
-    --zen-border: ${COLOR1};
-}
-
-/* Style internal pages (about:*, new tab, etc) */
 @-moz-document url-prefix("about:") {
     :root {
         --in-content-page-background: ${COLOR_BG} !important;
         --in-content-text-color: ${COLOR_FG} !important;
         --in-content-primary-button-background: ${COLOR4} !important;
-        --in-content-primary-button-text-color: ${COLOR_FG} !important;
         --in-content-box-background: ${COLOR0} !important;
         --in-content-border-color: ${COLOR1} !important;
-        --in-content-item-hover: ${COLOR2} !important;
-        --in-content-item-selected: ${COLOR4} !important;
     }
 
     body {
         background-color: ${COLOR_BG} !important;
         color: ${COLOR_FG} !important;
-    }
-
-    a {
-        color: ${COLOR4} !important;
-    }
-
-    a:hover {
-        color: ${COLOR5} !important;
-    }
-}
-
-/* New tab page */
-@-moz-document url("about:newtab"), url("about:home") {
-    body {
-        background-color: ${COLOR_BG} !important;
-    }
-
-    .search-wrapper input {
-        background-color: ${COLOR0} !important;
-        color: ${COLOR_FG} !important;
-        border-color: ${COLOR1} !important;
-    }
-}
-
-/* Preferences/Settings page */
-@-moz-document url-prefix("about:preferences") {
-    body {
-        background-color: ${COLOR_BG} !important;
-    }
-
-    .navigation {
-        background-color: ${COLOR0} !important;
-    }
-
-    .category:hover {
-        background-color: ${COLOR2} !important;
-    }
-
-    .category[selected] {
-        background-color: ${COLOR4} !important;
     }
 }
 EOF
 
-echo "✓ Zen Browser theme updated!"
+echo "✓ Zen Browser theme updated! "
+echo "ℹ Note: Restart Zen or reload tabs for changes to take effect."
+echo "ℹ Ensure 'toolkit.legacyUserProfileCustomizations.stylesheets' is set to true in about:config"
