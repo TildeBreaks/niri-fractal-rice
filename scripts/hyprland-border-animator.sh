@@ -10,7 +10,6 @@ COLOR4="888888"
 COLOR3="444444"
 
 # State variables
-IS_BUSY=1 # 1 is false in shell return logic for my is_busy check, but let's use 0/1 properly
 BUSY_STATE=0
 CHECK_INTERVAL=20 # Check for busy status every 20 iterations
 ITERATION=0
@@ -65,7 +64,8 @@ while true; do
     fi
 
     # Apply the rotating gradient to Hyprland
-    hyprctl keyword general:col.active_border "rgba(${COLOR2}ff) rgba(${COLOR4}ff) rgba(${COLOR3}ff) ${angle}deg"
+    # Added --batch and -q to suppress "ok" output
+    hyprctl --batch -q "keyword general:col.active_border rgba(${COLOR2}ff) rgba(${COLOR4}ff) rgba(${COLOR3}ff) ${angle}deg"
 
     sleep $delay
 done
