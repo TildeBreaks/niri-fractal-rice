@@ -1,7 +1,7 @@
 # Niri Fractal Rice - Project Structure
 
 ## Overview
-A cohesive Wayland desktop environment built around Niri WM with dynamic fractal-based theming via Pywal integration.
+A cohesive Wayland desktop environment built around Niri WM (with Hyprland support) featuring dynamic fractal-based theming via Pywal integration.
 
 ## Directory Structure
 
@@ -9,6 +9,8 @@ A cohesive Wayland desktop environment built around Niri WM with dynamic fractal
 ~/.config/
 ├── niri/
 │   └── config.kdl              # Niri window manager config
+├── hypr/
+│   └── hyprland.conf           # Hyprland window manager config
 ├── quickshell/
 │   ├── topbar/
 │   │   └── shell.qml           # Main topbar with system info, clock, workspaces
@@ -42,6 +44,7 @@ A cohesive Wayland desktop environment built around Niri WM with dynamic fractal
 └── waybar/                     # Fallback bar config
 
 ~/.local/bin/
+├── hyprland-pywal-colors.sh    # Update Hyprland colors from pywal
 ├── generate-flame.sh           # Generate fractal flame wallpapers
 ├── flam3-palette-util.sh       # Palette management for flame generation
 ├── generate-fractal.py         # Mandelbrot/Julia set generator
