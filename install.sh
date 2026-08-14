@@ -35,6 +35,37 @@ else
 fi
 
 echo ""
+# Simple preflight: check for critical external commands we cannot install automatically
+preflight_check() {
+    required=(jq wal swww flam3-render flam3-genome notify-send)
+    missing=()
+    for cmd in "${required[@]}"; do
+        if ! command -v "$cmd" &>/dev/null; then
+            missing+=("$cmd")
+        fi
+    done
+    if [ ${#missing[@]} -ne 0 ]; then
+        echo "⚠️  Missing required commands: ${missing[*]}"
+        echo "    Some of these may be provided by distro packages or AUR/build-from-source."
+        echo "    The installer will continue, but certain features will not work until you install these components." 
+        echo "    Missing items and suggested sources:"
+        echo "      • flam3-render / flam3-genome — from flam3 (AUR or build)"
+        echo "      • swww — cargo install swww or distro package"
+        echo "      • wal — pip install pywal or distro package"
+        echo "      • notify-send — libnotify (distro package)"
+        echo "      • jq — jq (distro package)"
+        read -p "Continue anyway? (y/N) " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            echo "Aborting per user request. Install missing dependencies and re-run installer."
+            exit 1
+        fi
+    fi
+}
+
+preflight_check
+
+echo ""
 echo "⚠️  This installer will:"
 echo "   • Install 40+ packages and dependencies"
 echo "   • Overwrite existing niri/quickshell/kitty configs"
@@ -380,8 +411,8 @@ echo ""
 echo "🎨 Generating initial theme..."
 
 # Check if we have a wallpaper to use
-if [ -f ~/Pictures/wallpapers/*.jpg ] || [ -f ~/Pictures/wallpapers/*.png ]; then
-    WALLPAPER=$(find ~/Pictures/wallpapers -type f \( -name "*.jpg" -o -name "*.png" \) | head -1)
+if ls ~/Pictures/wallpapers/*.{jpg,png} 1> /dev/null 2>&1; then
+    WALLPAPER=$(ls -t ~/Pictures/wallpapers/*.{jpg,png} 2>/dev/null | head -1)
     if [ -n "$WALLPAPER" ]; then
         echo "Using existing wallpaper: $WALLPAPER"
         wal -i "$WALLPAPER" -a 85 -q
